@@ -150,6 +150,9 @@ node --test "tests/web/*.test.js"
 - `src/config_loader.cpp`, `src/key_names.cpp`: config parsing and key names
 - `src/matcher.cpp`: chord matching and key-event expansion (unit tested)
 - `config/actions.txt`: built-in actions library
+- `tests/`: C++ tests, one file per area (`config_`, `matcher_`, `keys_`, `engine_`, `static_files_tests.cpp`)
+  on a tiny shared harness (`harness.h`: write `TEST(name) { CHECK(...); }`, it registers itself);
+  `tests/web/` has the GUI logic tests (Node)
 - `web/index.html`, `web/css/app.css`, `web/js/*.js`: the GUI. Plain scripts loaded in order:
   `state` (shared state), `config` (parsing and validation), `keyboard` (keyboard picture and
   target picker), `actions` (Actions tab), `devices` (server calls), `app` (rendering and start-up)

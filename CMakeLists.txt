@@ -33,13 +33,18 @@ add_custom_command(TARGET keymapper POST_BUILD
 # Unit tests: build/Release/keymapper_tests.exe (also runnable via `ctest -C Release`).
 enable_testing()
 add_executable(keymapper_tests
-    tests/tests.cpp
+    tests/main.cpp
+    tests/config_tests.cpp
+    tests/matcher_tests.cpp
+    tests/keys_tests.cpp
+    tests/engine_tests.cpp
+    tests/static_files_tests.cpp
     src/key_names.cpp
     src/config_loader.cpp
     src/matcher.cpp
     src/engine.cpp
     src/static_files.cpp
 )
-target_include_directories(keymapper_tests PRIVATE src)
+target_include_directories(keymapper_tests PRIVATE src tests)
 target_compile_definitions(keymapper_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
 add_test(NAME keymapper_tests COMMAND keymapper_tests)
