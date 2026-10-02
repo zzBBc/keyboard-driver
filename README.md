@@ -135,6 +135,12 @@ cmake --build build --config Release --target keymapper_tests
 build\Release\keymapper_tests.exe
 ```
 
+The GUI's logic (config parsing, chords, actions, shortcuts) has its own tests, which need Node.js:
+
+```
+node --test "tests/web/*.test.js"
+```
+
 ## Layout
 
 - `src/hook.cpp`: keyboard hook, Raw Input attribution, remapping
