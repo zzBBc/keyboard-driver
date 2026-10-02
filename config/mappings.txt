@@ -4,9 +4,3 @@
 # RAlt = RCtrl
 #
 # Layers: while the key in the header is held, the mappings below it apply.
-
-[layer CapsLock]
-h = Left
-j = Down
-k = Up
-l = Right
