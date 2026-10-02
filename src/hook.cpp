@@ -96,6 +96,10 @@ bool isExtendedKey(WORD vk) {
         case VK_PRIOR: case VK_NEXT:
         case VK_LEFT: case VK_RIGHT: case VK_UP: case VK_DOWN:
         case VK_NUMLOCK: case VK_SNAPSHOT:
+        case VK_BROWSER_BACK: case VK_BROWSER_FORWARD: case VK_BROWSER_REFRESH: case VK_BROWSER_HOME:
+        case VK_VOLUME_MUTE: case VK_VOLUME_DOWN: case VK_VOLUME_UP:
+        case VK_MEDIA_NEXT_TRACK: case VK_MEDIA_PREV_TRACK: case VK_MEDIA_STOP: case VK_MEDIA_PLAY_PAUSE:
+        case VK_LAUNCH_MAIL:
             return true;
         default:
             return false;

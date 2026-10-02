@@ -25,6 +25,13 @@ const std::unordered_map<std::string, unsigned short>& table() {
             {"-", VK_OEM_MINUS},      {".", VK_OEM_PERIOD},     {"/", VK_OEM_2},
             {"`", VK_OEM_3},          {"[", VK_OEM_4},          {"\\", VK_OEM_5},
             {"]", VK_OEM_6},          {"'", VK_OEM_7},
+            // Media and browser keys: what many keyboards' Fn combos produce.
+            {"volumeup", VK_VOLUME_UP},           {"volumedown", VK_VOLUME_DOWN},
+            {"mute", VK_VOLUME_MUTE},             {"playpause", VK_MEDIA_PLAY_PAUSE},
+            {"nexttrack", VK_MEDIA_NEXT_TRACK},   {"previoustrack", VK_MEDIA_PREV_TRACK},
+            {"mediastop", VK_MEDIA_STOP},         {"browserback", VK_BROWSER_BACK},
+            {"browserforward", VK_BROWSER_FORWARD}, {"browserrefresh", VK_BROWSER_REFRESH},
+            {"browserhome", VK_BROWSER_HOME},     {"launchmail", VK_LAUNCH_MAIL},
         };
         for (char c = 'a'; c <= 'z'; ++c) m[std::string(1, c)] = static_cast<unsigned short>(c - 'a' + 'A');
         for (char c = '0'; c <= '9'; ++c) m[std::string(1, c)] = static_cast<unsigned short>(c);
