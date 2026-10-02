@@ -1,5 +1,5 @@
-#include <windows.h>
-
+#include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <memory>
 
@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
     {
         std::string libText;
         std::vector<std::string> libErrors;
-        const std::string libPath = dir + "\\actions.txt";
+        const std::string libPath = (std::filesystem::path(dir) / "actions.txt").string();
         if (readFile(libPath, libText) && !parseConfig(libText, *library, libErrors))
             for (const auto& e : libErrors) std::cerr << libPath << ": " << e << "\n";
     }
@@ -25,15 +25,15 @@ int main(int argc, char** argv) {
     ServerOptions opts;
     opts.engine = &engine;
     opts.library = library;
-    opts.webDir = dir + "\\web";
-    opts.devicesDir = dir + "\\devices";
-    opts.configPath = argc > 1 ? argv[1] : dir + "\\mappings.txt";
+    opts.webDir = (std::filesystem::path(dir) / "web").string();
+    opts.devicesDir = (std::filesystem::path(dir) / "devices").string();
+    opts.configPath = argc > 1 ? argv[1] : (std::filesystem::path(dir) / "mappings.txt").string();
     if (argc > 2) opts.port = std::atoi(argv[2]);
 
     // First run: seed the config from the bundled default.
     std::string text;
     if (!readFile(opts.configPath, text)) {
-        if (readFile(dir + "\\mappings.default.txt", text)) writeFile(opts.configPath, text);
+        if (readFile((std::filesystem::path(dir) / "mappings.default.txt").string(), text)) writeFile(opts.configPath, text);
     }
 
     auto cfg = std::make_shared<Config>();
@@ -43,21 +43,19 @@ int main(int argc, char** argv) {
     engine.setConfig("", cfg);
 
     // Per-keyboard configs: devices\<hardware id>.txt
-    WIN32_FIND_DATAA fd;
-    if (HANDLE h = FindFirstFileA((opts.devicesDir + "\\*.txt").c_str(), &fd); h != INVALID_HANDLE_VALUE) {
-        do {
-            const std::string id = std::string(fd.cFileName).substr(0, std::string(fd.cFileName).size() - 4);
-            const std::string path = opts.devicesDir + "\\" + fd.cFileName;
-            std::string devText;
-            auto devCfg = std::make_shared<Config>();
-            std::vector<std::string> devErrors;
-            if (!validDeviceId(id) || !readFile(path, devText)) continue;
-            if (!parseConfig(devText, *devCfg, devErrors, library.get()))
-                for (const auto& e : devErrors) std::cerr << path << ": " << e << "\n";
-            engine.setConfig(id, devCfg);
-            std::cout << "Keyboard config: " << id << "\n";
-        } while (FindNextFileA(h, &fd));
-        FindClose(h);
+    std::error_code scanError;
+    for (const auto& entry : std::filesystem::directory_iterator(opts.devicesDir, scanError)) {
+        if (entry.path().extension() != ".txt") continue;
+        const std::string id = entry.path().stem().string();
+        const std::string path = entry.path().string();
+        std::string devText;
+        auto devCfg = std::make_shared<Config>();
+        std::vector<std::string> devErrors;
+        if (!validDeviceId(id) || !readFile(path, devText)) continue;
+        if (!parseConfig(devText, *devCfg, devErrors, library.get()))
+            for (const auto& e : devErrors) std::cerr << path << ": " << e << "\n";
+        engine.setConfig(id, devCfg);
+        std::cout << "Keyboard config: " << id << "\n";
     }
 
     if (!startServer(opts)) {

@@ -1,9 +1,8 @@
 #include "server.h"
 
-#include <winsock2.h>
-#include <ws2tcpip.h>
-
 #include <algorithm>
+#include <cstdint>
+#include <filesystem>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -14,7 +13,44 @@
 #include "key_names.h"
 #include "static_files.h"
 
+// Sockets: Winsock on Windows, BSD sockets elsewhere. Only these few calls differ.
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
 #pragma comment(lib, "ws2_32.lib")
+
+namespace {
+using socket_t = SOCKET;
+constexpr socket_t kInvalidSocket = INVALID_SOCKET;
+void closeSocket(socket_t s) { closesocket(s); }
+void setReceiveTimeout(socket_t s, int ms) {
+    DWORD t = static_cast<DWORD>(ms);
+    setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&t), sizeof t);
+}
+bool startNetworking() {
+    WSADATA wsa;
+    return WSAStartup(MAKEWORD(2, 2), &wsa) == 0;
+}
+}  // namespace
+#else
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <unistd.h>
+
+namespace {
+using socket_t = int;
+constexpr socket_t kInvalidSocket = -1;
+void closeSocket(socket_t s) { close(s); }
+void setReceiveTimeout(socket_t s, int ms) {
+    timeval t{ms / 1000, (ms % 1000) * 1000};
+    setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &t, sizeof t);
+}
+bool startNetworking() { return true; }
+}  // namespace
+#endif
 
 namespace {
 
@@ -50,7 +86,7 @@ std::string urlDecode(const std::string& in) {
     return out;
 }
 
-bool readRequest(SOCKET s, Request& req) {
+bool readRequest(socket_t s, Request& req) {
     std::string buf;
     char tmp[4096];
     size_t headEnd;
@@ -94,7 +130,7 @@ bool readRequest(SOCKET s, Request& req) {
     return true;
 }
 
-void respond(SOCKET s, int status, const char* reason, const char* type, const std::string& body) {
+void respond(socket_t s, int status, const char* reason, const char* type, const std::string& body) {
     std::string out = "HTTP/1.1 " + std::to_string(status) + " " + reason + "\r\n"
                       "Content-Type: " + type + "\r\n"
                       "Content-Length: " + std::to_string(body.size()) + "\r\n"
@@ -142,14 +178,15 @@ std::string stepsToText(const Steps& steps) {
 }
 
 std::string deviceConfigPath(const ServerOptions& opts, const std::string& id) {
-    return opts.devicesDir + "\\" + id + ".txt";
+    return (std::filesystem::path(opts.devicesDir) / (id + ".txt")).string();
 }
 
 bool fileExists(const std::string& path) {
-    return GetFileAttributesA(path.c_str()) != INVALID_FILE_ATTRIBUTES;
+    std::error_code ec;
+    return std::filesystem::exists(path, ec);
 }
 
-void handle(SOCKET s, const ServerOptions& opts) {
+void handle(socket_t s, const ServerOptions& opts) {
     Request req;
     if (!readRequest(s, req)) return;
 
@@ -165,7 +202,7 @@ void handle(SOCKET s, const ServerOptions& opts) {
     const Target target = splitTarget(req.path);
     if (req.method == "GET" && (req.path == "/" || req.path == "/index.html")) {
         std::string html;
-        if (!readFile(opts.webDir + "\\index.html", html))
+        if (!readFile((std::filesystem::path(opts.webDir) / "index.html").string(), html))
             return respond(s, 500, "Error", "text/plain", "web/index.html not found in " + opts.webDir);
         return respond(s, 200, "OK", "text/html; charset=utf-8", html);
     }
@@ -217,7 +254,8 @@ void handle(SOCKET s, const ServerOptions& opts) {
             return respond(s, 403, "Forbidden", "text/plain", "missing header");
 
         if (req.method == "DELETE" && !device.empty()) {  // back to the default config
-            if (fileExists(file) && !DeleteFileA(file.c_str()))
+            std::error_code ec;
+            if (fileExists(file) && !std::filesystem::remove(file, ec))
                 return respond(s, 500, "Error", "text/plain", "cannot delete " + file);
             opts.engine->setConfig(device, nullptr);
             return respond(s, 200, "OK", "text/plain", "ok");
@@ -230,7 +268,10 @@ void handle(SOCKET s, const ServerOptions& opts) {
                 for (const auto& e : errors) msg += e + "\n";
                 return respond(s, 400, "Bad Request", "text/plain; charset=utf-8", msg);
             }
-            if (!device.empty()) CreateDirectoryA(opts.devicesDir.c_str(), nullptr);
+            if (!device.empty()) {
+                std::error_code ec;
+                std::filesystem::create_directories(opts.devicesDir, ec);
+            }
             if (!writeFile(file, req.body))
                 return respond(s, 500, "Error", "text/plain", "cannot write " + file);
             opts.engine->setConfig(device, std::move(cfg));
@@ -240,8 +281,7 @@ void handle(SOCKET s, const ServerOptions& opts) {
     // The GUI's scripts and styles: GET /js/app.js, /css/app.css, ... from the web folder.
     if (req.method == "GET" && isSafeStaticPath(target.path)) {
         if (const char* type = contentTypeFor(target.path)) {
-            std::string file = opts.webDir + target.path;
-            std::replace(file.begin(), file.end(), '/', '\\');
+            const std::string file = (std::filesystem::path(opts.webDir) / target.path.substr(1)).string();  // path was validated
             std::string body;
             if (readFile(file, body)) return respond(s, 200, "OK", type, body);
         }
@@ -249,34 +289,32 @@ void handle(SOCKET s, const ServerOptions& opts) {
     respond(s, 404, "Not Found", "text/plain", "not found");
 }
 
-void serve(SOCKET listener, ServerOptions opts) {
+void serve(socket_t listener, ServerOptions opts) {
     for (;;) {
-        SOCKET c = accept(listener, nullptr, nullptr);
-        if (c == INVALID_SOCKET) continue;
-        DWORD timeoutMs = 5000;
-        setsockopt(c, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&timeoutMs), sizeof timeoutMs);
+        socket_t c = accept(listener, nullptr, nullptr);
+        if (c == kInvalidSocket) continue;
+        setReceiveTimeout(c, 5000);
         handle(c, opts);
-        closesocket(c);
+        closeSocket(c);
     }
 }
 
 }  // namespace
 
 bool startServer(const ServerOptions& opts) {
-    WSADATA wsa;
-    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) return false;
+    if (!startNetworking()) return false;
 
-    SOCKET listener = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (listener == INVALID_SOCKET) return false;
+    socket_t listener = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (listener == kInvalidSocket) return false;
 
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(static_cast<u_short>(opts.port));
+    addr.sin_port = htons(static_cast<std::uint16_t>(opts.port));
     inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);  // loopback only
 
-    if (bind(listener, reinterpret_cast<sockaddr*>(&addr), sizeof addr) == SOCKET_ERROR ||
-        listen(listener, 8) == SOCKET_ERROR) {
-        closesocket(listener);
+    if (bind(listener, reinterpret_cast<sockaddr*>(&addr), sizeof addr) != 0 ||
+        listen(listener, 8) != 0) {
+        closeSocket(listener);
         return false;
     }
     std::thread(serve, listener, opts).detach();
