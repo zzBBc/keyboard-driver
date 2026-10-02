@@ -19,7 +19,7 @@ The build copies `web/`, the built-in actions (`actions.txt`) and the default co
 
 `.github/workflows/release.yml` (GitHub Actions) builds and runs both test suites on every push and
 pull request. Pushing a tag such as `v1.2.3`, or running the workflow by hand, also publishes: the
-app (`keymapper.exe`, `web/`, `actions.txt`, `mappings.default.txt`, this README) is committed to the
+app (`keymapper.exe`, `web/`, `actions.txt`, `mappings.default.txt`) is committed to the
 default branch under
 
 - `release/<os>/<version>/` when there is a version (a tag, or the version given to a manual run), as

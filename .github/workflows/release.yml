@@ -55,7 +55,6 @@ jobs:
           cp build/Release/keymapper.exe package/
           cp -r build/Release/web package/web
           cp build/Release/actions.txt build/Release/mappings.default.txt package/
-          cp README.md package/
 
       - name: Upload the app
         uses: actions/upload-artifact@v4
