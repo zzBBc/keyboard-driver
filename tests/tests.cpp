@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "config_loader.h"
+#include "key_names.h"
 #include "matcher.h"
 
 namespace {
@@ -178,6 +179,49 @@ void modifierKeyDetection() {
     CHECK(modBit('Q') == 0);
 }
 
+// ---- action descriptions and the built-in library ----
+
+void descriptionIsParsed() {
+    auto p = parse("[action a]\ndescription: Switch to the next window\nalt+tab\n");
+    CHECK(p.ok);
+    CHECK(p.cfg.actionInfo["a"] == "Switch to the next window");
+    CHECK(p.cfg.actions["a"].size() == 1);  // the description line is not a step
+}
+
+void libraryActionIsUsedWhenNotDefined() {
+    auto lib = parse("[action switch-window]\ndescription: Switch window\nalt+tab\n");
+    CHECK(lib.ok);
+
+    Config cfg;
+    std::vector<std::string> errors;
+    CHECK(parseConfig("alt+q = @switch-window\n", cfg, errors, &lib.cfg));
+    CHECK(cfg.base.chords.size() == 1);
+    CHECK(cfg.base.chords.size() == 1 && cfg.base.chords[0].out.size() == 1 && cfg.base.chords[0].out[0].key == VK_TAB);
+
+    Config alone;
+    std::vector<std::string> errors2;
+    CHECK(!parseConfig("alt+q = @switch-window\n", alone, errors2));  // no library: still unknown
+}
+
+void userActionOverridesLibrary() {
+    auto lib = parse("[action switch-window]\nalt+tab\n");
+    Config cfg;
+    std::vector<std::string> errors;
+    CHECK(parseConfig("alt+q = @switch-window\n[action switch-window]\nctrl+tab\n", cfg, errors, &lib.cfg));
+    CHECK(cfg.base.chords.size() == 1 && cfg.base.chords[0].out.size() == 1);
+    CHECK(cfg.base.chords[0].out[0].mods == ModCtrl);
+}
+
+void keyNameFromVk() {
+    CHECK(nameFromVk(VK_TAB) == "tab");
+    CHECK(nameFromVk(VK_ESCAPE) == "esc");  // shortest of esc/escape
+    CHECK(nameFromVk(VK_RETURN) == "enter");
+    CHECK(nameFromVk(VK_OEM_PERIOD) == ".");
+    CHECK(nameFromVk('Q') == "q");
+    CHECK(nameFromVk(VK_F4) == "f4");
+    CHECK(nameFromVk(0x07).empty());  // undefined key
+}
+
 }  // namespace
 
 int main() {
@@ -195,6 +239,10 @@ int main() {
     comboOutputWithoutAction();
     badChordIsAnError();
     modifierKeyDetection();
+    descriptionIsParsed();
+    libraryActionIsUsedWhenNotDefined();
+    userActionOverridesLibrary();
+    keyNameFromVk();
 
     std::cout << (g_checks - g_failures) << "/" << g_checks << " checks passed\n";
     return g_failures == 0 ? 0 : 1;
