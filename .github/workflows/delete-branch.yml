@@ -1,0 +1,54 @@
+name: Delete squashed branch
+
+# GitHub's "automatically delete head branches" is all-or-nothing, but only squash merges should delete
+# the branch here. This does that. After a merge it looks at the commit the merge created:
+#   squash merge  one parent, and the subject is "<PR title> (#<number>)" (the repository's squash
+#                 setting)                                                      -> delete the branch
+#   merge commit  two parents                                                   -> keep it
+#   rebase merge  keeps the original commit messages, so no "(#<number>)" suffix -> keep it
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write  # only to delete the PR's branch
+
+jobs:
+  delete-branch:
+    # merged (not just closed), from a branch in this repository (never a fork), never the default branch
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref != github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete the branch if the PR was squash-merged
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # all of these reach the script through the environment, never pasted into it (a PR title is
+          # free text)
+          REPO: ${{ github.repository }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          TITLE: ${{ github.event.pull_request.title }}
+          NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          commit="$(gh api "repos/$REPO/commits/$MERGE_SHA")"
+          parents="$(jq '.parents | length' <<<"$commit")"
+          subject="$(jq -r '.commit.message | split("\n")[0]' <<<"$commit")"
+
+          if [[ "$parents" != "1" || "$subject" != "$TITLE (#$NUMBER)" ]]; then
+            echo "Not a squash merge (parents: $parents, subject: '$subject'): keeping '$HEAD_REF'."
+            exit 0
+          fi
+          if [[ ! "$HEAD_REF" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+            echo "Unusual branch name '$HEAD_REF': leaving it alone." >&2
+            exit 0
+          fi
+          # The branch may already be gone (deleted by hand), which is fine.
+          if gh api -X DELETE "repos/$REPO/git/refs/heads/$HEAD_REF"; then
+            echo "Squash merge: deleted '$HEAD_REF'."
+          else
+            echo "'$HEAD_REF' was already deleted."
+          fi
