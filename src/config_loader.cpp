@@ -139,6 +139,7 @@ bool parseConfig(const std::string& text, Config& out, std::vector<std::string>&
                     mode = Mode::Action;
                     actionName = name;
                     action = &out.actions[name];
+                    out.actionOrder.push_back(name);
                 }
                 continue;
             }
@@ -163,6 +164,11 @@ bool parseConfig(const std::string& text, Config& out, std::vector<std::string>&
                 std::string comboErr;
                 if (!parseChord(trim(line.substr(kShortcut.size())), combo, comboErr)) fail(lineNo, comboErr);
                 else out.actionShortcuts[actionName].push_back(combo);
+                continue;
+            }
+            static const std::string kCategory = "category:";
+            if (lower(line.substr(0, kCategory.size())) == kCategory) {
+                out.actionCategory[actionName] = trim(line.substr(kCategory.size()));
                 continue;
             }
             static const std::string kDesc = "description:";

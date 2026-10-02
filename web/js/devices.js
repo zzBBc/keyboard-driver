@@ -49,8 +49,8 @@ async function load() {
   allKeyNames = names;
   $('keys').innerHTML = names.map(n => `<option value="${n}">`).join('');
   builtin = (await fetch('/api/actions').then(r => r.text())).split('\n').filter(Boolean).map(l => {
-    const [name, desc, steps, shortcuts] = l.split('\t');
-    return { name, desc: desc || '', steps: steps || '', shortcuts: (shortcuts || '').split(',').map(x => x.trim()).filter(Boolean).map(normChord) };
+    const [name, desc, steps, shortcuts, category] = l.split('\t');
+    return { name, desc: desc || '', steps: steps || '', category: category || '', shortcuts: (shortcuts || '').split(',').map(x => x.trim()).filter(Boolean).map(normChord) };
   });
   await refreshDevices();
   await loadConfig();

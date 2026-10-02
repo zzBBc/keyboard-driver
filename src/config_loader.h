@@ -37,7 +37,9 @@ struct Config {
     Scope base;
     std::vector<Layer> layers;                 // earlier layers win when several are held
     std::map<std::string, Steps> actions;      // named sequences, e.g. "switch-window" = Alt+Tab
+    std::vector<std::string> actionOrder;      // action names in the order the file defines them
     std::map<std::string, std::string> actionInfo;  // action name -> description (optional)
+    std::map<std::string, std::string> actionCategory;  // action name -> group shown in the GUI (optional)
     std::map<std::string, std::vector<KeyChord>> actionShortcuts;  // default combos (library actions)
 };
 
@@ -46,7 +48,8 @@ struct Config {
 //   [layer <key>]        (following mappings apply while <key> is held)
 //   [base]               (switch back to base mappings)
 //   [action <name>]      (following lines are the action's steps: "ctrl+c, ctrl+v",
-//                         plus optional "description: text" and "shortcut: alt+q" lines)
+//                         plus optional "description: text", "category: Name" and
+//                         "shortcut: alt+q" lines)
 //   from = none          (clears a binding, including a library action's default shortcut)
 // `from` is a key or a chord ("alt+q"); `to` is a key, chord, comma-separated steps, or
 // "@action". Problems are appended to `errors` (with line numbers) and the line is skipped.

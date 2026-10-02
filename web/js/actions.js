@@ -233,7 +233,7 @@ function renderActions(p) {
   };
 
   const userOnly = state.actions.map(a => a.name).filter(n => !builtin.some(b => b.name === n));
-  section('Built-in actions', builtin.map(b => b.name));
+  for (const g of builtinGroups()) section(g.category, g.names);
   section('In your config file', userOnly);
   if (!builtin.length && !state.actions.length) {
     const e = document.createElement('div'); e.className = 'empty';

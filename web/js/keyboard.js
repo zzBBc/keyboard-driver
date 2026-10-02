@@ -101,9 +101,9 @@ function targetSelect(value, onPick) {
   const sel = document.createElement('select');
   const cur = value.trim();
   const mine = state.actions.map(x => x.name).filter(n => ACTION_NAME.test(n));
-  const lib = builtin.map(x => x.name).filter(n => !mine.includes(n));
+  const userOnly = mine.filter(n => !builtin.some(b => b.name === n));  // your own actions; changed built-ins stay in their group
   const keyNames = allKeyNames;
-  const known = new Set(['none', ...mine.map(n => '@' + n), ...lib.map(n => '@' + n), ...keyNames]);
+  const known = new Set(['none', ...mine.map(n => '@' + n), ...builtin.map(b => '@' + b.name), ...keyNames]);
   const isKnown = known.has(cur.toLowerCase());
 
   const add = (parent, v, label) => { const o = document.createElement('option'); o.value = v; o.textContent = label; parent.appendChild(o); };
@@ -117,8 +117,8 @@ function targetSelect(value, onPick) {
   };
   const actionItem = n => { const info = actionInfo(n); return ['@' + n, info && info.desc ? `${n} \u2014 ${info.desc}` : n]; };
   group('Clear', [['none', 'None \u2014 clear this combo']]);
-  group('Your actions', mine.map(actionItem));
-  group('Built-in actions', lib.map(actionItem));
+  group('Your actions', userOnly.map(actionItem));
+  for (const g of builtinGroups()) group(g.category, g.names.map(actionItem));
   group('Keys', keyNames.map(k => [k, keyLabel(k) === k ? k : `${k} (${keyLabel(k)})`]));
   sel.value = !cur ? '' : isKnown ? cur.toLowerCase() : cur;
   sel.onchange = () => { if (sel.value) onPick(sel.value); };

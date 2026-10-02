@@ -81,7 +81,9 @@ ctrl+c, ctrl+v               # steps run in order
 - If a step wants a modifier you are already holding (Alt for `alt+tab`), it is left held, so
   the Windows switcher stays open while you keep Alt down. Other held modifiers are released
   for the step and put back afterwards.
-- Optional `description: text` as the first line of an action shows in the GUI.
+- Optional `description: text` as the first line of an action shows in the GUI. A
+  `category: Name` line (library actions) groups the action in the GUI's Actions tab and action
+  list, in the order the file lists them.
 - A library action can declare default combos with `shortcut: alt+q` lines. They are bound in
   Base unless your config binds that combo itself or clears it with `alt+q = none`. In the
   GUI a default shows as a chip marked "(default)"; its × writes the `none` line. The shipped
@@ -136,8 +138,12 @@ build\Release\keymapper_tests.exe
 ## Layout
 
 - `src/hook.cpp`: keyboard hook, Raw Input attribution, remapping
-- `src/server.cpp`: localhost HTTP server and API (`/api/config`, `/api/devices`, `/api/keys`)
+- `src/server.cpp`: localhost HTTP server and API (`/api/config`, `/api/devices`, `/api/keys`,
+  `/api/actions`), and the GUI's scripts and styles from `web/` (`src/static_files.cpp` decides
+  which paths and file types may be served)
 - `src/config_loader.cpp`, `src/key_names.cpp`: config parsing and key names
 - `src/matcher.cpp`: chord matching and key-event expansion (unit tested)
 - `config/actions.txt`: built-in actions library
-- `web/index.html`: the GUI
+- `web/index.html`, `web/css/app.css`, `web/js/*.js`: the GUI. Plain scripts loaded in order:
+  `state` (shared state), `config` (parsing and validation), `keyboard` (keyboard picture and
+  target picker), `actions` (Actions tab), `devices` (server calls), `app` (rendering and start-up)

@@ -4,64 +4,79 @@
 #
 # [action name]
 # description: what it does
+# category: group name in the GUI (optional)
 # step, step        (each step is a key or combo; steps run in order)
 
 # --- Windows and desktops ---
 
 [action switch-window]
 description: Switch to the next window (hold Alt to keep cycling)
+category: Windows and desktops
 alt+tab
 
 [action previous-window]
 description: Switch to the previous window
+category: Windows and desktops
 alt+shift+tab
 
 [action task-view]
 description: Open Task View with all windows and desktops
+category: Windows and desktops
 win+tab
 
 [action close-window]
 description: Close the active window
+category: Windows and desktops
 alt+f4
 
 [action show-desktop]
 description: Show or hide the desktop
+category: Windows and desktops
 win+d
 
 [action lock-screen]
 description: Lock the computer
+category: Windows and desktops
 win+l
 
 [action task-manager]
 description: Open Task Manager
+category: Windows and desktops
 ctrl+shift+esc
 
 [action snap-left]
 description: Snap the window to the left half
+category: Windows and desktops
 win+left
 
 [action snap-right]
 description: Snap the window to the right half
+category: Windows and desktops
 win+right
 
 [action maximize-window]
 description: Maximize the window
+category: Windows and desktops
 win+up
 
 [action minimize-window]
 description: Minimize the window
+category: Windows and desktops
 win+down
 
 [action next-desktop]
 description: Switch to the next virtual desktop
+category: Windows and desktops
 ctrl+win+right
 
 [action previous-desktop]
 description: Switch to the previous virtual desktop
+category: Windows and desktops
 ctrl+win+left
 
 [action new-desktop]
 description: Create a new virtual desktop
+category: Windows and desktops
 ctrl+win+d
 
 # --- Media and browser keys ---
@@ -70,126 +85,156 @@ ctrl+win+d
 
 [action volume-up]
 description: Raise the volume
+category: Media and browser
 volumeup
 
 [action volume-down]
 description: Lower the volume
+category: Media and browser
 volumedown
 
 [action mute]
 description: Mute or unmute
+category: Media and browser
 mute
 
 [action play-pause]
 description: Play or pause the current media
+category: Media and browser
 playpause
 
 [action next-track]
 description: Next track
+category: Media and browser
 nexttrack
 
 [action previous-track]
 description: Previous track
+category: Media and browser
 previoustrack
 
 [action stop-media]
 description: Stop media playback
+category: Media and browser
 mediastop
 
 [action browser-back]
 description: Browser back
+category: Media and browser
 browserback
 
 [action browser-forward]
 description: Browser forward
+category: Media and browser
 browserforward
 
 [action browser-refresh]
 description: Refresh the page
+category: Media and browser
 browserrefresh
 
 [action browser-home]
 description: Open the browser home page
+category: Media and browser
 browserhome
 
 [action launch-mail]
 description: Open the default mail app
+category: Media and browser
 launchmail
 
 # --- Launch ---
 
 [action file-explorer]
 description: Open File Explorer
+category: Launch
 win+e
 
 [action run-dialog]
 description: Open the Run dialog
+category: Launch
 win+r
 
 [action screenshot-region]
 description: Capture part of the screen (Snipping Tool)
+category: Launch
 win+shift+s
 
 [action emoji-picker]
 description: Open the emoji picker
+category: Launch
 win+.
 
 [action clipboard-history]
 description: Open the clipboard history
+category: Launch
 win+v
 
 # --- Editing ---
 
 [action copy]
 description: Copy the selection
+category: Editing
 ctrl+c
 
 [action cut]
 description: Cut the selection
+category: Editing
 ctrl+x
 
 [action paste]
 description: Paste
+category: Editing
 ctrl+v
 
 [action paste-plain]
 description: Paste without formatting
+category: Editing
 ctrl+shift+v
 
 [action undo]
 description: Undo
+category: Editing
 ctrl+z
 
 [action redo]
 description: Redo
+category: Editing
 ctrl+y
 
 [action select-all]
 description: Select everything
+category: Editing
 ctrl+a
 
 [action duplicate-selection]
 description: Copy the selection and paste it right after
+category: Editing
 ctrl+c, ctrl+v
 
 # --- Tabs (browsers, editors) ---
 
 [action next-tab]
 description: Go to the next tab
+category: Tabs
 ctrl+tab
 
 [action previous-tab]
 description: Go to the previous tab
+category: Tabs
 ctrl+shift+tab
 
 [action new-tab]
 description: Open a new tab
+category: Tabs
 ctrl+t
 
 [action close-tab]
 description: Close the current tab
+category: Tabs
 ctrl+w
 
 [action reopen-tab]
 description: Reopen the last closed tab
+category: Tabs
 ctrl+shift+t

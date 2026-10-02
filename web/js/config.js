@@ -55,6 +55,17 @@ function validChord(str) {
   return !!key && (validKeys.size === 0 || validKeys.has(key)) && parts.every(m => MODS.includes(m));
 }
 function validSteps(str) { return !!str && (validChord(str) || str.split(',').every(x => validChord(x))); }
+// Built-in actions grouped by the category: line in config/actions.txt, in the order the file lists them.
+function builtinGroups() {
+  const groups = [];
+  for (const b of builtin) {
+    const category = b.category || 'Other';
+    let g = groups.find(x => x.category === category);
+    if (!g) groups.push(g = { category, names: [] });
+    g.names.push(b.name);
+  }
+  return groups;
+}
 function actionNames() { return [...new Set([...state.actions.map(a => a.name), ...builtin.map(b => b.name)])]; }
 // Description and steps for an action name: your own definition wins over the built-in one.
 function actionInfo(name) {
