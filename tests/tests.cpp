@@ -8,6 +8,7 @@
 #include "config_loader.h"
 #include "key_names.h"
 #include "matcher.h"
+#include "static_files.h"
 
 namespace {
 
@@ -375,6 +376,67 @@ void mediaKeyWorksInComboOutput() {
     CHECK(p.cfg.base.chords.size() == 1 && p.cfg.base.chords[0].out[0].key == VK_VOLUME_DOWN);
 }
 
+// ---- action categories ----
+
+void categoryIsParsed() {
+    auto p = parse("[action a]\ndescription: A\ncategory: Windows and desktops\nalt+tab\n");
+    CHECK(p.ok);
+    CHECK(p.cfg.actionCategory["a"] == "Windows and desktops");
+    CHECK(p.cfg.actions["a"].size() == 1);  // the category line is not a step
+}
+
+void categoryIsOptional() {
+    auto p = parse("[action a]\nalt+tab\n");
+    CHECK(p.ok);
+    CHECK(p.cfg.actionCategory.count("a") == 0);
+}
+
+void categoryAndOtherLinesCanBeInAnyOrder() {
+    auto p = parse("[action a]\nalt+tab\nshortcut: alt+q\ncategory: Windows\ndescription: Switch\n");
+    CHECK(p.ok);
+    CHECK(p.cfg.actionCategory["a"] == "Windows");
+    CHECK(p.cfg.actionInfo["a"] == "Switch");
+    CHECK(p.cfg.actionShortcuts["a"].size() == 1);
+}
+
+void actionOrderFollowsTheFile() {
+    auto p = parse("[action zeta]\nalt+tab\n[action alpha]\nctrl+c\n[action mid]\nctrl+v\n");
+    CHECK(p.ok);
+    CHECK(p.cfg.actionOrder.size() == 3);
+    CHECK(p.cfg.actionOrder.size() == 3 && p.cfg.actionOrder[0] == "zeta" && p.cfg.actionOrder[1] == "alpha" && p.cfg.actionOrder[2] == "mid");
+}
+
+// ---- static files served to the GUI ----
+
+void staticPathsAreSafe() {
+    CHECK(isSafeStaticPath("/js/app.js"));
+    CHECK(isSafeStaticPath("/css/app.css"));
+    CHECK(isSafeStaticPath("/js/keyboard-layout.js"));
+    CHECK(!isSafeStaticPath(""));
+    CHECK(!isSafeStaticPath("/"));
+    CHECK(!isSafeStaticPath("js/app.js"));              // must start with '/'
+    CHECK(!isSafeStaticPath("/../secret.txt"));
+    CHECK(!isSafeStaticPath("/js/../../secret.txt"));
+    CHECK(!isSafeStaticPath("/js/..\\..\\secret.txt"));  // backslashes
+    CHECK(!isSafeStaticPath("//server/share/x.js"));
+    CHECK(!isSafeStaticPath("/c:/windows/win.ini"));    // drive letters
+    CHECK(!isSafeStaticPath("/js/%2e%2e/x.js"));        // encoded dots
+    CHECK(!isSafeStaticPath("/.git/config"));            // hidden files
+    CHECK(!isSafeStaticPath("/js/app.js?x=1"));          // the query is stripped before this check
+    CHECK(!isSafeStaticPath(std::string("/js/") + std::string(300, 'a') + ".js"));  // absurdly long
+}
+
+void staticContentTypes() {
+    CHECK(std::string(contentTypeFor("/js/app.js")).find("text/javascript") == 0);
+    CHECK(std::string(contentTypeFor("/css/app.css")).find("text/css") == 0);
+    CHECK(std::string(contentTypeFor("/index.html")).find("text/html") == 0);
+    CHECK(std::string(contentTypeFor("/data/x.json")).find("application/json") == 0);
+    CHECK(std::string(contentTypeFor("/img/a.svg")) == "image/svg+xml");
+    CHECK(contentTypeFor("/mappings.txt") == nullptr);   // only web assets are served
+    CHECK(contentTypeFor("/keymapper.exe") == nullptr);
+    CHECK(contentTypeFor("/noextension") == nullptr);
+}
+
 }  // namespace
 
 int main() {
@@ -411,6 +473,12 @@ int main() {
     mediaKeyNames();
     mediaKeyActionIsBindable();
     mediaKeyWorksInComboOutput();
+    categoryIsParsed();
+    categoryIsOptional();
+    categoryAndOtherLinesCanBeInAnyOrder();
+    actionOrderFollowsTheFile();
+    staticPathsAreSafe();
+    staticContentTypes();
 
     std::cout << (g_checks - g_failures) << "/" << g_checks << " checks passed\n";
     return g_failures == 0 ? 0 : 1;
