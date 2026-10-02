@@ -85,7 +85,7 @@ ctrl+c, ctrl+v               # steps run in order
 - A library action can declare default combos with `shortcut: alt+q` lines. They are bound in
   Base unless your config binds that combo itself or clears it with `alt+q = none`. In the
   GUI a default shows as a chip marked "(default)"; its × writes the `none` line. The shipped
-  defaults are `alt+q` = switch-window, `alt+shift+q` = previous-window, `alt+a` = task-view.
+  `config/actions.txt` currently declares no defaults.
 - A `from = to` line after an action block ends that block. Actions work in base, layers and
   per-keyboard files. The GUI's **Actions** tab lists every action; click **+ Shortcut** on one
   and press the keys (or tick Ctrl/Alt/Shift/Win and pick a key) to bind it. **Remove shortcut**
