@@ -61,12 +61,20 @@
   .action .head input { font-weight: 600; width: 220px; }
   .builtin { margin-top: 16px; }
   .builtin summary { cursor: pointer; color: var(--text); font-weight: 600; }
-  .brow { display: grid; grid-template-columns: 150px 1fr auto auto; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); }
+  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px 2px 8px; margin: 0 6px 4px 0; border: 1px solid var(--accent); border-radius: 12px; background: color-mix(in srgb, var(--accent) 14%, var(--panel)); }
+  .chip button { border: 0; background: transparent; padding: 0 4px; line-height: 1; color: var(--muted); }
+  .bbind { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding-bottom: 4px; }
+  .bedit { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px; border: 1px dashed var(--line); border-radius: 8px; margin-bottom: 6px; }
+  .bedit label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+  .bedit .on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .bedit .note { flex-basis: 100%; color: var(--muted); }
+  .brow { display: grid; grid-template-columns: 170px 1fr auto; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); }
   .brow .bname { font-weight: 600; }
   .brow .bdesc { color: var(--muted); }
   .brow code { color: var(--accent); white-space: nowrap; }
   .kinfo { flex-basis: 100%; color: var(--text); }
-  .kedit select, .row select { max-width: 200px; text-overflow: ellipsis; }
+  .kedit select, .row select { max-width: 320px; text-overflow: ellipsis; }
+  .row select { flex: 1; min-width: 0; }
   .hint { color: var(--muted); margin: 0 0 12px; }
   .empty { color: var(--muted); padding: 8px 0 12px; }
 </style>
@@ -94,7 +102,7 @@
   <button id="save" class="primary">Save</button>
 </div></div>
 <datalist id="keys"></datalist>
-<datalist id="targets"></datalist>
+
 
 <script>
 // state: { base: [[from, to]], layers: [{ trigger, maps: [[from, to]] }] }
@@ -242,15 +250,13 @@ function buildKeyboard(list, trigger) {
   if (!selKey) ed.textContent = 'Click a key to choose what it should become. Tick modifiers first to bind a combo like Alt+Q.';
   else {
     const i = find(selKey);
-    const input = keyInput(i >= 0 ? list[i][1] : '', () => {}, 'to');
-    input.onchange = () => { setTarget(list, fromStr(selKey), input.value.trim()); render(); };
+    const input = targetSelect(i >= 0 ? list[i][1] : '', v => { setTarget(list, fromStr(selKey), v); render(); });
     const pick = document.createElement('button'); pick.textContent = picking ? 'Click a key\u2026' : 'Pick on keyboard'; pick.className = picking ? 'on' : '';
     pick.onclick = () => { picking = !picking; render(); };
     const clear = document.createElement('button'); clear.textContent = 'Clear'; clear.disabled = i < 0;
     clear.onclick = () => { setTarget(list, fromStr(selKey), ''); render(); };
     const strong = document.createElement('b'); strong.textContent = chordLabel(fromStr(selKey)); strong.style.color = 'var(--text)';
-    const act = actionSelect(i >= 0 ? list[i][1] : '', v => { setTarget(list, fromStr(selKey), v); render(); });
-    ed.append(strong, ' becomes ', input, act, pick, clear);
+    ed.append(strong, ' becomes ', input, pick, clear);
     const target = (i >= 0 ? list[i][1] : '').trim();
     const info = target.startsWith('@') ? actionInfo(target.slice(1)) : null;
     if (info) {
@@ -259,38 +265,39 @@ function buildKeyboard(list, trigger) {
       ed.appendChild(d);
     }
     const hint = document.createElement('div'); hint.style.flexBasis = '100%';
-    hint.textContent = 'Type a key (tab), a combo (ctrl+shift+tab), steps (ctrl+c, ctrl+v) or an action (@' + (actionNames()[0] || 'name') + ').';
+    hint.textContent = 'Pick a key or an action from the list, or use "Pick on keyboard" and then click the key it should become.';
     ed.appendChild(hint);
   }
   wrap.appendChild(ed);
   return wrap;
 }
 
-// Dropdown of the defined actions (yours, then built-in); picking one calls onPick("@name").
-function actionSelect(value, onPick) {
+// What a key becomes, picked from a list: actions (yours, then built-in) and keys.
+// A value that isn't in the list (a combo or steps written by hand in the config) stays selectable
+// as "Custom" so it isn't lost. Picking calls onPick(value) with "@name" or a key name.
+function targetSelect(value, onPick) {
   const sel = document.createElement('select');
+  const cur = value.trim();
   const mine = state.actions.map(x => x.name).filter(n => ACTION_NAME.test(n));
   const lib = builtin.map(x => x.name).filter(n => !mine.includes(n));
-  sel.title = 'Run an action';
-  const first = document.createElement('option');
-  first.value = ''; first.textContent = mine.length + lib.length ? '@ Action\u2026' : '(no actions yet)';
-  sel.appendChild(first);
-  const group = (label, names) => {
-    if (!names.length) return;
+  const keyNames = allKeyNames;
+  const known = new Set([...mine.map(n => '@' + n), ...lib.map(n => '@' + n), ...keyNames]);
+  const isKnown = known.has(cur.toLowerCase());
+
+  const add = (parent, v, label) => { const o = document.createElement('option'); o.value = v; o.textContent = label; parent.appendChild(o); };
+  add(sel, '', 'Choose\u2026');
+  if (cur && !isKnown) add(sel, cur, 'Custom: ' + cur);
+  const group = (label, items) => {
+    if (!items.length) return;
     const g = document.createElement('optgroup'); g.label = label;
-    for (const n of names) {
-      const info = actionInfo(n);
-      const o = document.createElement('option'); o.value = '@' + n;
-      o.textContent = info && info.desc ? `${n} \u2014 ${info.desc}` : n;
-      g.appendChild(o);
-    }
+    for (const [v, text] of items) add(g, v, text);
     sel.appendChild(g);
   };
-  group('Your actions', mine);
-  group('Built-in actions', lib);
-  const cur = value.trim().toLowerCase();
-  sel.value = [...mine, ...lib].some(n => '@' + n === cur) ? cur : '';
-  sel.disabled = !(mine.length + lib.length);
+  const actionItem = n => { const info = actionInfo(n); return ['@' + n, info && info.desc ? `${n} \u2014 ${info.desc}` : n]; };
+  group('Your actions', mine.map(actionItem));
+  group('Built-in actions', lib.map(actionItem));
+  group('Keys', keyNames.map(k => [k, keyLabel(k) === k ? k : `${k} (${keyLabel(k)})`]));
+  sel.value = !cur ? '' : isKnown ? cur.toLowerCase() : cur;
   sel.onchange = () => { if (sel.value) onPick(sel.value); };
   return sel;
 }
@@ -303,61 +310,139 @@ function setTarget(list, from, to) {
   else list.push([from, to]);
 }
 
-// ---- Actions tab ----
+// ---- Actions tab: give an action a shortcut. Actions come from the lists; only the combo is new. ----
+let bind = null;  // { action, mods: [], key: '', scope: 'base' | layer index, recording: bool }
+
+const CODE_KEYS = { Space: 'space', Tab: 'tab', Enter: 'enter', Escape: 'esc', Backspace: 'backspace', ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down',
+  Home: 'home', End: 'end', PageUp: 'pageup', PageDown: 'pagedown', Insert: 'insert', Delete: 'delete', CapsLock: 'capslock', Minus: '-', Equal: '=',
+  BracketLeft: '[', BracketRight: ']', Backslash: '\\', Semicolon: ';', Quote: "'", Comma: ',', Period: '.', Slash: '/', Backquote: '`',
+  PrintScreen: 'printscreen', ScrollLock: 'scrolllock', Pause: 'pause', ContextMenu: 'apps' };
+function keyFromEvent(e) {
+  if (/^Key[A-Z]$/.test(e.code)) return e.code.slice(3).toLowerCase();
+  if (/^Digit\d$/.test(e.code)) return e.code.slice(5);
+  if (/^F\d{1,2}$/.test(e.code)) return e.code.toLowerCase();
+  return CODE_KEYS[e.code] || '';  // modifier keys and anything unknown: not a key for a shortcut
+}
+// Record the next shortcut pressed in the browser. (Windows keeps some, like Alt+Tab, for itself:
+// use the checkboxes and key list for those.)
+document.addEventListener('keydown', e => {
+  if (!bind || !bind.recording) return;
+  e.preventDefault();
+  const noMods = !e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey;
+  if (e.key === 'Escape' && noMods) { bind.recording = false; return render(); }
+  const key = keyFromEvent(e);
+  if (!key) return;  // only a modifier so far: keep waiting
+  bind.mods = MODS.filter(m => ({ ctrl: e.ctrlKey, alt: e.altKey, shift: e.shiftKey, win: e.metaKey })[m]);
+  bind.key = key; bind.recording = false;
+  render();
+}, true);
+
+function scopeList(scope) { return scope === 'base' ? state.base : state.layers[scope].maps; }
+function scopeLabel(scope) { return scope === 'base' ? 'Base' : `Layer: ${state.layers[scope].trigger || '?'}`; }
+
+// Shortcuts currently bound to an action, across the base and all layers.
+function bindingsFor(name) {
+  const out = [];
+  const scan = (scope, list) => list.forEach(([from, to]) => { if (to.trim().toLowerCase() === '@' + name) out.push({ scope, list, from }); });
+  scan('base', state.base);
+  state.layers.forEach((l, i) => scan(i, l.maps));
+  return out;
+}
+
+function bindEditor(name) {
+  const ed = document.createElement('div'); ed.className = 'bedit';
+  const rec = document.createElement('button'); rec.className = bind.recording ? 'on' : '';
+  rec.textContent = bind.recording ? 'Press the shortcut\u2026 (Esc cancels)' : 'Record shortcut';
+  rec.onclick = () => { bind.recording = !bind.recording; render(); };
+  ed.appendChild(rec);
+
+  ed.append('or');
+  for (const m of MODS) {
+    const l = document.createElement('label'), c = document.createElement('input');
+    c.type = 'checkbox'; c.checked = bind.mods.includes(m);
+    c.onchange = () => { bind.mods = c.checked ? [...bind.mods, m] : bind.mods.filter(x => x !== m); render(); };
+    l.append(c, m[0].toUpperCase() + m.slice(1)); ed.appendChild(l);
+  }
+  const key = document.createElement('select');
+  const none = document.createElement('option'); none.value = ''; none.textContent = 'Key\u2026'; key.appendChild(none);
+  for (const k of allKeyNames) { const o = document.createElement('option'); o.value = k; o.textContent = keyLabel(k) === k ? k : `${k} (${keyLabel(k)})`; key.appendChild(o); }
+  key.value = bind.key; key.onchange = () => { bind.key = key.value; render(); };
+  ed.appendChild(key);
+
+  if (state.layers.length) {
+    const sc = document.createElement('select');
+    const add = (v, t) => { const o = document.createElement('option'); o.value = String(v); o.textContent = t; sc.appendChild(o); };
+    add('base', 'in Base');
+    state.layers.forEach((l, i) => add(i, `in ${scopeLabel(i)}`));
+    sc.value = String(bind.scope);
+    sc.onchange = () => { bind.scope = sc.value === 'base' ? 'base' : Number(sc.value); render(); };
+    ed.appendChild(sc);
+  }
+
+  const combo = bind.key ? [...MODS.filter(m => bind.mods.includes(m)), bind.key].join('+') : '';
+  const ok = document.createElement('button'); ok.className = 'primary'; ok.disabled = !combo;
+  ok.textContent = combo ? `Bind ${chordLabel(combo)}` : 'Bind';
+  ok.onclick = () => { setTarget(scopeList(bind.scope), combo, '@' + name); bind = null; render(); };
+  const cancel = document.createElement('button'); cancel.textContent = 'Cancel';
+  cancel.onclick = () => { bind = null; render(); };
+  ed.append(ok, cancel);
+
+  if (combo) {
+    const hit = scopeList(bind.scope).find(([a]) => normChord(a) === combo);
+    const note = document.createElement('div'); note.className = 'note';
+    if (hit && hit[1].trim().toLowerCase() !== '@' + name) note.textContent = `${chordLabel(combo)} is currently \u2192 ${hit[1]}; binding will replace that.`;
+    else if (hit) note.textContent = `${chordLabel(combo)} already runs this action.`;
+    if (note.textContent) ed.appendChild(note);
+  }
+  return ed;
+}
+
 function renderActions(p) {
   const hint = document.createElement('p'); hint.className = 'hint';
-  hint.textContent = 'An action is a named list of steps. Bind it to a key or combo as "alt+q = @name" from the Base tab or any layer. Each step is a key or combo (alt+tab); separate several with commas (ctrl+c, ctrl+v).';
+  hint.textContent = 'Pick an action and give it a shortcut. Press Save to apply. (Windows keeps some shortcuts, like Alt+Tab, for itself; enter those with the boxes instead of recording.)';
   p.appendChild(hint);
-  if (!state.actions.length) { const e = document.createElement('div'); e.className = 'empty'; e.textContent = 'No actions yet.'; p.appendChild(e); }
 
-  state.actions.forEach((a, ai) => {
-    const box = document.createElement('div'); box.className = 'action';
-    const head = document.createElement('div'); head.className = 'head';
-    const name = document.createElement('input'); name.value = a.name; name.placeholder = 'action-name'; name.spellcheck = false;
-    const checkName = () => name.classList.toggle('invalid', !ACTION_NAME.test(name.value.trim()) || state.actions.some((o, oi) => oi !== ai && o.name === name.value.trim().toLowerCase()));
-    name.oninput = () => { a.name = name.value.trim().toLowerCase(); checkName(); updateMeta(); };
-    name.onchange = () => render();  // refresh the @action suggestions
-    checkName();
-    const del = document.createElement('button'); del.textContent = 'Delete action';
-    del.onclick = () => { state.actions.splice(ai, 1); render(); };
-    const desc = document.createElement('input'); desc.value = a.desc || ''; desc.placeholder = 'Description (optional)'; desc.style.flex = '1'; desc.spellcheck = false;
-    desc.oninput = () => { a.desc = desc.value.trim(); updateMeta(); };
-    head.append(name, desc, del); box.appendChild(head);
+  const section = (title, rows) => {
+    if (!rows.length) return;
+    const det = document.createElement('details'); det.className = 'builtin'; det.open = true;
+    const sum = document.createElement('summary'); sum.textContent = `${title} (${rows.length})`;
+    det.appendChild(sum);
+    for (const b of rows) {
+      const r = document.createElement('div'); r.className = 'brow';
+      const nm = document.createElement('span'); nm.className = 'bname'; nm.textContent = b.name;
+      const ds = document.createElement('span'); ds.className = 'bdesc'; ds.textContent = b.desc;
+      const st = document.createElement('code'); st.textContent = b.steps;
+      r.append(nm, ds, st);
 
-    a.steps.forEach((step, si) => {
-      const r = document.createElement('div'); r.className = 'row';
-      const x = document.createElement('button'); x.textContent = '\u00d7'; x.title = 'Remove step';
-      x.onclick = () => { a.steps.splice(si, 1); render(); };
-      r.append(keyInput(step, v => a.steps[si] = v, 'step'), x); box.appendChild(r);
-    });
-    const add = document.createElement('button'); add.textContent = '+ Add step';
-    add.onclick = () => { a.steps.push(''); render(); const ins = box.querySelectorAll('.row input'); ins[ins.length - 1].focus(); };
-    box.appendChild(add);
-    p.appendChild(box);
-  });
+      const bd = document.createElement('div'); bd.className = 'bbind';
+      for (const x of bindingsFor(b.name)) {
+        const chip = document.createElement('span'); chip.className = 'chip';
+        chip.append((x.scope === 'base' ? '' : scopeLabel(x.scope) + ': ') + chordLabel(normChord(x.from)));
+        const rm = document.createElement('button'); rm.textContent = '\u00d7'; rm.title = 'Remove this shortcut';
+        rm.onclick = () => { setTarget(x.list, normChord(x.from), ''); render(); };
+        chip.appendChild(rm); bd.appendChild(chip);
+      }
+      const open = bind && bind.action === b.name;
+      if (!open) {
+        const add = document.createElement('button'); add.textContent = '+ Shortcut';
+        add.onclick = () => { bind = { action: b.name, mods: [], key: '', scope: 'base', recording: false }; render(); };
+        bd.appendChild(add);
+      }
+      r.appendChild(bd);
+      if (open) r.appendChild(bindEditor(b.name));
+      det.appendChild(r);
+    }
+    p.appendChild(det);
+  };
 
-  const act = document.createElement('div'); act.className = 'actions';
-  const add = document.createElement('button'); add.textContent = '+ Action';
-  add.onclick = () => { state.actions.push({ name: '', desc: '', steps: [''] }); render(); const ins = p.querySelectorAll('.action .head input'); ins[ins.length - 1].focus(); };
-  act.appendChild(add); p.appendChild(act);
-
-  // Built-in actions: read-only, usable as-is (@name) or copied here to customise.
-  const det = document.createElement('details'); det.className = 'builtin'; det.open = true;
-  const sum = document.createElement('summary'); sum.textContent = `Built-in actions (${builtin.length})`;
-  det.appendChild(sum);
-  for (const b of builtin) {
-    const r = document.createElement('div'); r.className = 'brow';
-    const nm = document.createElement('span'); nm.className = 'bname'; nm.textContent = b.name;
-    const ds = document.createElement('span'); ds.className = 'bdesc'; ds.textContent = b.desc;
-    const st = document.createElement('code'); st.textContent = b.steps;
-    const overridden = state.actions.some(x => x.name === b.name);
-    const cp = document.createElement('button'); cp.textContent = overridden ? 'Overridden' : 'Copy to mine'; cp.disabled = overridden;
-    cp.title = 'Make your own editable copy (it then replaces the built-in one)';
-    cp.onclick = () => { state.actions.push({ name: b.name, desc: b.desc, steps: b.steps.split(',').map(x => x.trim()) }); render(); };
-    r.append(nm, ds, st, cp); det.appendChild(r);
+  // Actions written by hand in the config file are listed too; their steps can only be changed in the file.
+  section('In your config file', state.actions.map(a => ({ name: a.name, desc: a.desc || '', steps: a.steps.filter(Boolean).join(', ') })));
+  section('Built-in actions', builtin.filter(b => !state.actions.some(a => a.name === b.name)));
+  if (!builtin.length && !state.actions.length) {
+    const e = document.createElement('div'); e.className = 'empty';
+    e.textContent = 'No actions found (actions.txt next to the exe).';
+    p.appendChild(e);
   }
-  if (!builtin.length) { const e = document.createElement('div'); e.className = 'empty'; e.textContent = 'No built-in actions found (actions.txt next to the exe).'; det.appendChild(e); }
-  p.appendChild(det);
 }
 
 function maps() { return current === 'base' ? state.base : state.layers[current].maps; }
@@ -368,7 +453,7 @@ function render() {
     const b = document.createElement('button');
     b.className = 'tab ' + (cls || ''); b.textContent = label; b.setAttribute('role', 'tab');
     b.setAttribute('aria-selected', String(current === key));
-    b.onclick = () => { if (key === 'add') addLayer(); else { current = key; selKey = ''; picking = false; selMods = []; render(); } };
+    b.onclick = () => { if (key === 'add') addLayer(); else { current = key; selKey = ''; picking = false; selMods = []; bind = null; render(); } };
     tabs.appendChild(b);
   };
   mk('Base', 'base');
@@ -377,7 +462,6 @@ function render() {
   mk('+ Layer', 'add', 'add');
 
   const p = $('panel'); p.innerHTML = '';
-  $('targets').innerHTML = [...allKeyNames, ...actionNames().filter(Boolean).map(n => '@' + n)].map(n => `<option value="${n}">`).join('');
   if (current === 'actions') { renderActions(p); updateMeta(); return; }
   const isLayer = current !== 'base';
   const list = maps();
@@ -395,8 +479,7 @@ function render() {
     const arrow = document.createElement('span'); arrow.className = 'arrow'; arrow.textContent = '→';
     const d = document.createElement('button'); d.textContent = '×'; d.title = 'Remove';
     d.onclick = () => { list.splice(i, 1); render(); };
-    r.append(keyInput(pair[0], v => pair[0] = v, 'from'), arrow, keyInput(pair[1], v => pair[1] = v, 'to'),
-             actionSelect(pair[1], v => { pair[1] = v; render(); }), d);
+    r.append(keyInput(pair[0], v => pair[0] = v, 'from'), arrow, targetSelect(pair[1], v => { pair[1] = v; render(); }), d);
     p.appendChild(r);
   });
 
@@ -425,7 +508,7 @@ function renderTabsOnly() { // keep input focus while typing a layer key
 function keyInput(value, onChange, kind = 'key') {
   const i = document.createElement('input');
   const ok = { key: v => validKeys.has(v.toLowerCase()), from: validChord, to: validTarget, step: validSteps }[kind];
-  i.value = value; i.setAttribute('list', kind === 'to' ? 'targets' : 'keys'); i.autocomplete = 'off'; i.spellcheck = false;
+  i.value = value; i.setAttribute('list', 'keys'); i.autocomplete = 'off'; i.spellcheck = false;
   const check = () => i.classList.toggle('invalid', !!i.value.trim() && validKeys.size > 0 && !ok(i.value.trim()));
   i.oninput = () => { onChange(i.value.trim()); check(); updateMeta(); };
   check();

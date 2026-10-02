@@ -30,7 +30,7 @@ remaps apply to every program.
 - **Keyboard** dropdown: choose which keyboard you are editing, or the default config.
   **Detect** selects the keyboard you typed on last.
 - **Tabs**: `Base` mappings are always active. A `Layer` tab applies only while its key is held.
-- **Keyboard picture**: click a key, then type its new target or use **Pick on keyboard**.
+- **Keyboard picture**: click a key, then pick what it becomes from the list (actions and keys) or use **Pick on keyboard**. A combo or steps written by hand in the config show as "Custom" and are kept.
 - **Save** applies the change immediately, no restart needed.
 
 ## Config files
@@ -83,14 +83,16 @@ ctrl+c, ctrl+v               # steps run in order
   for the step and put back afterwards.
 - Optional `description: text` as the first line of an action shows in the GUI.
 - A `from = to` line after an action block ends that block. Actions work in base, layers and
-  per-keyboard files. The GUI has an **Actions** tab, and the keyboard picture has
-  Ctrl/Alt/Shift/Win checkboxes for binding combos.
+  per-keyboard files. The GUI's **Actions** tab lists every action; click **+ Shortcut** on one
+  and press the keys (or tick Ctrl/Alt/Shift/Win and pick a key) to bind it. The keyboard
+  picture also has Ctrl/Alt/Shift/Win checkboxes for binding combos.
 
 **Built-in actions** (`config/actions.txt`, copied next to the exe on every build) are about 30
 common shortcuts such as `switch-window`, `close-window`, `show-desktop`, `copy`, `next-tab`.
 Use them directly (`alt+q = @switch-window`) without defining them. An action of the same name
 in your own config wins. The GUI lists them, with descriptions, on the Actions tab and in the
-action dropdowns, and can copy one into your config to edit.
+"becomes" list. Actions are chosen from these lists, not created in the GUI; to define your
+own, write an `[action ...]` block in the config file.
 
 Key names are lowercase: letters, digits, `f1`-`f24`, `esc`, `tab`, `capslock`, `space`,
 `enter`, `backspace`, `lshift`/`rshift`, `lctrl`/`rctrl`, `lalt`/`ralt`, `lwin`/`rwin`,
