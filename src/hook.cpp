@@ -1,5 +1,6 @@
 #include "hook.h"
 
+#include "keycodes.h"
 #include "matcher.h"
 
 #include <windows.h>
@@ -13,6 +14,66 @@
 #include <mutex>
 #include <unordered_map>
 #include <unordered_set>
+
+// The core uses portable key ids (keycodes.h) whose values equal the Windows virtual-key codes, so the
+// hook passes them straight through. These guard that assumption.
+static_assert(key::Backspace == VK_BACK, "key id Backspace must equal VK_BACK");
+static_assert(key::Tab == VK_TAB, "key id Tab must equal VK_TAB");
+static_assert(key::Enter == VK_RETURN, "key id Enter must equal VK_RETURN");
+static_assert(key::Escape == VK_ESCAPE, "key id Escape must equal VK_ESCAPE");
+static_assert(key::Space == VK_SPACE, "key id Space must equal VK_SPACE");
+static_assert(key::CapsLock == VK_CAPITAL, "key id CapsLock must equal VK_CAPITAL");
+static_assert(key::LShift == VK_LSHIFT, "key id LShift must equal VK_LSHIFT");
+static_assert(key::RShift == VK_RSHIFT, "key id RShift must equal VK_RSHIFT");
+static_assert(key::LControl == VK_LCONTROL, "key id LControl must equal VK_LCONTROL");
+static_assert(key::RControl == VK_RCONTROL, "key id RControl must equal VK_RCONTROL");
+static_assert(key::LAlt == VK_LMENU, "key id LAlt must equal VK_LMENU");
+static_assert(key::RAlt == VK_RMENU, "key id RAlt must equal VK_RMENU");
+static_assert(key::LWin == VK_LWIN, "key id LWin must equal VK_LWIN");
+static_assert(key::RWin == VK_RWIN, "key id RWin must equal VK_RWIN");
+static_assert(key::Apps == VK_APPS, "key id Apps must equal VK_APPS");
+static_assert(key::PageUp == VK_PRIOR, "key id PageUp must equal VK_PRIOR");
+static_assert(key::PageDown == VK_NEXT, "key id PageDown must equal VK_NEXT");
+static_assert(key::Home == VK_HOME, "key id Home must equal VK_HOME");
+static_assert(key::End == VK_END, "key id End must equal VK_END");
+static_assert(key::Insert == VK_INSERT, "key id Insert must equal VK_INSERT");
+static_assert(key::Delete == VK_DELETE, "key id Delete must equal VK_DELETE");
+static_assert(key::Left == VK_LEFT, "key id Left must equal VK_LEFT");
+static_assert(key::Right == VK_RIGHT, "key id Right must equal VK_RIGHT");
+static_assert(key::Up == VK_UP, "key id Up must equal VK_UP");
+static_assert(key::Down == VK_DOWN, "key id Down must equal VK_DOWN");
+static_assert(key::PrintScreen == VK_SNAPSHOT, "key id PrintScreen must equal VK_SNAPSHOT");
+static_assert(key::ScrollLock == VK_SCROLL, "key id ScrollLock must equal VK_SCROLL");
+static_assert(key::Pause == VK_PAUSE, "key id Pause must equal VK_PAUSE");
+static_assert(key::NumLock == VK_NUMLOCK, "key id NumLock must equal VK_NUMLOCK");
+static_assert(key::Semicolon == VK_OEM_1, "key id Semicolon must equal VK_OEM_1");
+static_assert(key::Equals == VK_OEM_PLUS, "key id Equals must equal VK_OEM_PLUS");
+static_assert(key::Comma == VK_OEM_COMMA, "key id Comma must equal VK_OEM_COMMA");
+static_assert(key::Minus == VK_OEM_MINUS, "key id Minus must equal VK_OEM_MINUS");
+static_assert(key::Period == VK_OEM_PERIOD, "key id Period must equal VK_OEM_PERIOD");
+static_assert(key::Slash == VK_OEM_2, "key id Slash must equal VK_OEM_2");
+static_assert(key::Backquote == VK_OEM_3, "key id Backquote must equal VK_OEM_3");
+static_assert(key::LeftBracket == VK_OEM_4, "key id LeftBracket must equal VK_OEM_4");
+static_assert(key::Backslash == VK_OEM_5, "key id Backslash must equal VK_OEM_5");
+static_assert(key::RightBracket == VK_OEM_6, "key id RightBracket must equal VK_OEM_6");
+static_assert(key::Quote == VK_OEM_7, "key id Quote must equal VK_OEM_7");
+static_assert(key::F1 == VK_F1, "key id F1 must equal VK_F1");
+static_assert(key::F4 == VK_F4, "key id F4 must equal VK_F4");
+static_assert(key::VolumeUp == VK_VOLUME_UP, "key id VolumeUp must equal VK_VOLUME_UP");
+static_assert(key::VolumeDown == VK_VOLUME_DOWN, "key id VolumeDown must equal VK_VOLUME_DOWN");
+static_assert(key::VolumeMute == VK_VOLUME_MUTE, "key id VolumeMute must equal VK_VOLUME_MUTE");
+static_assert(key::MediaPlayPause == VK_MEDIA_PLAY_PAUSE, "key id MediaPlayPause must equal VK_MEDIA_PLAY_PAUSE");
+static_assert(key::MediaNext == VK_MEDIA_NEXT_TRACK, "key id MediaNext must equal VK_MEDIA_NEXT_TRACK");
+static_assert(key::MediaPrevious == VK_MEDIA_PREV_TRACK, "key id MediaPrevious must equal VK_MEDIA_PREV_TRACK");
+static_assert(key::MediaStop == VK_MEDIA_STOP, "key id MediaStop must equal VK_MEDIA_STOP");
+static_assert(key::BrowserBack == VK_BROWSER_BACK, "key id BrowserBack must equal VK_BROWSER_BACK");
+static_assert(key::BrowserForward == VK_BROWSER_FORWARD, "key id BrowserForward must equal VK_BROWSER_FORWARD");
+static_assert(key::BrowserRefresh == VK_BROWSER_REFRESH, "key id BrowserRefresh must equal VK_BROWSER_REFRESH");
+static_assert(key::BrowserHome == VK_BROWSER_HOME, "key id BrowserHome must equal VK_BROWSER_HOME");
+static_assert(key::LaunchMail == VK_LAUNCH_MAIL, "key id LaunchMail must equal VK_LAUNCH_MAIL");
+static_assert(key::Ctrl == VK_CONTROL, "key id Ctrl must equal VK_CONTROL");
+static_assert(key::Alt == VK_MENU, "key id Alt must equal VK_MENU");
+static_assert(key::Shift == VK_SHIFT, "key id Shift must equal VK_SHIFT");
 
 namespace {
 

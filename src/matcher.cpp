@@ -1,6 +1,6 @@
 #include "matcher.h"
 
-#include <windows.h>
+#include "keycodes.h"
 
 namespace {
 
@@ -9,10 +9,10 @@ constexpr unsigned kAllMods[] = {ModCtrl, ModAlt, ModShift, ModWin};
 // Key we press when a modifier has to be held and the user isn't holding one.
 unsigned short leftKeyFor(unsigned mod) {
     switch (mod) {
-        case ModCtrl: return VK_LCONTROL;
-        case ModAlt: return VK_LMENU;
-        case ModShift: return VK_LSHIFT;
-        default: return VK_LWIN;
+        case ModCtrl: return key::LControl;
+        case ModAlt: return key::LAlt;
+        case ModShift: return key::LShift;
+        default: return key::LWin;
     }
 }
 
@@ -20,10 +20,10 @@ unsigned short leftKeyFor(unsigned mod) {
 
 unsigned modBit(unsigned short vk) {
     switch (vk) {
-        case VK_LCONTROL: case VK_RCONTROL: case VK_CONTROL: return ModCtrl;
-        case VK_LMENU: case VK_RMENU: case VK_MENU: return ModAlt;
-        case VK_LSHIFT: case VK_RSHIFT: case VK_SHIFT: return ModShift;
-        case VK_LWIN: case VK_RWIN: return ModWin;
+        case key::LControl: case key::RControl: case key::Ctrl: return ModCtrl;
+        case key::LAlt: case key::RAlt: case key::Alt: return ModAlt;
+        case key::LShift: case key::RShift: case key::Shift: return ModShift;
+        case key::LWin: case key::RWin: return ModWin;
         default: return 0;
     }
 }

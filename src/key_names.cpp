@@ -1,6 +1,6 @@
 #include "key_names.h"
 
-#include <windows.h>
+#include "keycodes.h"
 
 #include <algorithm>
 #include <cctype>
@@ -11,31 +11,31 @@ namespace {
 const std::unordered_map<std::string, unsigned short>& table() {
     static const std::unordered_map<std::string, unsigned short> t = [] {
         std::unordered_map<std::string, unsigned short> m = {
-            {"backspace", VK_BACK},   {"tab", VK_TAB},          {"enter", VK_RETURN},
-            {"esc", VK_ESCAPE},       {"escape", VK_ESCAPE},    {"space", VK_SPACE},
-            {"capslock", VK_CAPITAL}, {"lshift", VK_LSHIFT},    {"rshift", VK_RSHIFT},
-            {"lctrl", VK_LCONTROL},   {"rctrl", VK_RCONTROL},   {"lalt", VK_LMENU},
-            {"ralt", VK_RMENU},       {"lwin", VK_LWIN},        {"rwin", VK_RWIN},
-            {"apps", VK_APPS},        {"pageup", VK_PRIOR},     {"pagedown", VK_NEXT},
-            {"home", VK_HOME},        {"end", VK_END},          {"insert", VK_INSERT},
-            {"delete", VK_DELETE},    {"left", VK_LEFT},        {"right", VK_RIGHT},
-            {"up", VK_UP},            {"down", VK_DOWN},        {"printscreen", VK_SNAPSHOT},
-            {"scrolllock", VK_SCROLL},{"pause", VK_PAUSE},      {"numlock", VK_NUMLOCK},
-            {";", VK_OEM_1},          {"=", VK_OEM_PLUS},       {",", VK_OEM_COMMA},
-            {"-", VK_OEM_MINUS},      {".", VK_OEM_PERIOD},     {"/", VK_OEM_2},
-            {"`", VK_OEM_3},          {"[", VK_OEM_4},          {"\\", VK_OEM_5},
-            {"]", VK_OEM_6},          {"'", VK_OEM_7},
+            {"backspace", key::Backspace},   {"tab", key::Tab},          {"enter", key::Enter},
+            {"esc", key::Escape},       {"escape", key::Escape},    {"space", key::Space},
+            {"capslock", key::CapsLock}, {"lshift", key::LShift},    {"rshift", key::RShift},
+            {"lctrl", key::LControl},   {"rctrl", key::RControl},   {"lalt", key::LAlt},
+            {"ralt", key::RAlt},       {"lwin", key::LWin},        {"rwin", key::RWin},
+            {"apps", key::Apps},        {"pageup", key::PageUp},     {"pagedown", key::PageDown},
+            {"home", key::Home},        {"end", key::End},          {"insert", key::Insert},
+            {"delete", key::Delete},    {"left", key::Left},        {"right", key::Right},
+            {"up", key::Up},            {"down", key::Down},        {"printscreen", key::PrintScreen},
+            {"scrolllock", key::ScrollLock},{"pause", key::Pause},      {"numlock", key::NumLock},
+            {";", key::Semicolon},          {"=", key::Equals},       {",", key::Comma},
+            {"-", key::Minus},      {".", key::Period},     {"/", key::Slash},
+            {"`", key::Backquote},          {"[", key::LeftBracket},          {"\\", key::Backslash},
+            {"]", key::RightBracket},          {"'", key::Quote},
             // Media and browser keys: what many keyboards' Fn combos produce.
-            {"volumeup", VK_VOLUME_UP},           {"volumedown", VK_VOLUME_DOWN},
-            {"mute", VK_VOLUME_MUTE},             {"playpause", VK_MEDIA_PLAY_PAUSE},
-            {"nexttrack", VK_MEDIA_NEXT_TRACK},   {"previoustrack", VK_MEDIA_PREV_TRACK},
-            {"mediastop", VK_MEDIA_STOP},         {"browserback", VK_BROWSER_BACK},
-            {"browserforward", VK_BROWSER_FORWARD}, {"browserrefresh", VK_BROWSER_REFRESH},
-            {"browserhome", VK_BROWSER_HOME},     {"launchmail", VK_LAUNCH_MAIL},
+            {"volumeup", key::VolumeUp},           {"volumedown", key::VolumeDown},
+            {"mute", key::VolumeMute},             {"playpause", key::MediaPlayPause},
+            {"nexttrack", key::MediaNext},   {"previoustrack", key::MediaPrevious},
+            {"mediastop", key::MediaStop},         {"browserback", key::BrowserBack},
+            {"browserforward", key::BrowserForward}, {"browserrefresh", key::BrowserRefresh},
+            {"browserhome", key::BrowserHome},     {"launchmail", key::LaunchMail},
         };
         for (char c = 'a'; c <= 'z'; ++c) m[std::string(1, c)] = static_cast<unsigned short>(c - 'a' + 'A');
         for (char c = '0'; c <= '9'; ++c) m[std::string(1, c)] = static_cast<unsigned short>(c);
-        for (int i = 1; i <= 24; ++i) m["f" + std::to_string(i)] = static_cast<unsigned short>(VK_F1 + i - 1);
+        for (int i = 1; i <= 24; ++i) m["f" + std::to_string(i)] = static_cast<unsigned short>(key::F1 + i - 1);
         return m;
     }();
     return t;
