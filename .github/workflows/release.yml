@@ -1,11 +1,12 @@
 name: Release
 
-# Every push and pull request: build and run both test suites.
-# A version tag (v1.2.3), or a manual run, also publishes the app by committing it back to the default
-# branch: release/<os>/<version>/ when there is a version, release/<os>/ when there is not.
+# Runs on a version tag (v1.2.3), on a manual run, and on pull requests. A plain push to a branch
+# (master included) does not start it.
+# Always: build and run both test suites. A version tag or a manual run also publishes the app by
+# committing it back to the default branch: release/<os>/<version>/ when there is a version,
+# release/<os>/ when there is not. Pull requests only build and test.
 on:
   push:
-    branches: ['**']
     tags: ['v*']
   pull_request:
   workflow_dispatch:
