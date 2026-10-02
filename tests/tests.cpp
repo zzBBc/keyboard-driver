@@ -222,6 +222,126 @@ void keyNameFromVk() {
     CHECK(nameFromVk(0x07).empty());  // undefined key
 }
 
+// ---- default shortcuts of built-in actions, and clearing them ----
+//
+// A library action may declare `shortcut: alt+q` lines. Those combos are bound by default in the
+// base scope. A config can rebind a default (`alt+q = @copy`) or clear it (`alt+q = none`).
+
+const char* kLibWithDefault =
+    "[action switch-window]\n"
+    "description: Switch window\n"
+    "shortcut: alt+q\n"
+    "alt+tab\n"
+    "\n"
+    "[action copy]\n"
+    "ctrl+c\n";
+
+Parsed parseWithLibrary(const std::string& text, const Config& lib) {
+    Parsed p;
+    p.ok = parseConfig(text, p.cfg, p.errors, &lib);
+    return p;
+}
+
+void defaultShortcutIsParsedInTheLibrary() {
+    auto lib = parse(kLibWithDefault);
+    CHECK(lib.ok);
+    CHECK(lib.cfg.actionShortcuts.count("switch-window") == 1);
+    const auto& combos = lib.cfg.actionShortcuts["switch-window"];
+    CHECK(combos.size() == 1);
+    CHECK(combos.size() == 1 && combos[0].mods == ModAlt && combos[0].key == 'Q');
+    CHECK(lib.cfg.actionShortcuts.count("copy") == 0);  // no shortcut declared
+}
+
+void severalDefaultShortcutsAndBadOnes() {
+    auto two = parse("[action a]\nshortcut: alt+q\nshortcut: alt+w\nalt+tab\n");
+    CHECK(two.ok);
+    CHECK(two.cfg.actionShortcuts["a"].size() == 2);
+    CHECK(!parse("[action a]\nshortcut: alt+nokey\nalt+tab\n").ok);  // unknown key
+    CHECK(!parse("[action a]\nshortcut: foo+q\nalt+tab\n").ok);      // unknown modifier
+}
+
+void defaultShortcutIsBoundWithoutAnyUserConfig() {
+    auto lib = parse(kLibWithDefault);
+    auto p = parseWithLibrary("", lib.cfg);
+    CHECK(p.ok);
+    CHECK(p.cfg.base.chords.size() == 1);
+    const Binding* b = findBinding(p.cfg.base.chords, ModAlt, 'Q');
+    CHECK(b != nullptr);
+    CHECK(b != nullptr && b->out.size() == 1 && b->out[0].mods == ModAlt && b->out[0].key == VK_TAB);
+}
+
+void noLibraryMeansNoDefaults() {
+    auto p = parse("");
+    CHECK(p.ok);
+    CHECK(p.cfg.base.chords.empty());
+}
+
+void userBindingReplacesTheDefault() {
+    auto lib = parse(kLibWithDefault);
+    auto p = parseWithLibrary("alt+q = @copy\n", lib.cfg);
+    CHECK(p.ok);
+    CHECK(p.cfg.base.chords.size() == 1);  // one binding for alt+q, the user's
+    const Binding* b = findBinding(p.cfg.base.chords, ModAlt, 'Q');
+    CHECK(b != nullptr && b->out.size() == 1 && b->out[0].mods == ModCtrl && b->out[0].key == 'C');
+}
+
+void defaultShortcutCanBeCleared() {
+    auto lib = parse(kLibWithDefault);
+    auto p = parseWithLibrary("alt+q = none\n", lib.cfg);
+    CHECK(p.ok);
+    CHECK(p.errors.empty());
+    CHECK(findBinding(p.cfg.base.chords, ModAlt, 'Q') == nullptr);
+    CHECK(p.cfg.base.chords.empty());
+}
+
+void clearingOneDefaultKeepsTheOthers() {
+    auto lib = parse("[action a]\nshortcut: alt+q\nalt+tab\n[action b]\nshortcut: alt+w\nctrl+c\n");
+    auto p = parseWithLibrary("alt+q = none\n", lib.cfg);
+    CHECK(p.ok);
+    CHECK(findBinding(p.cfg.base.chords, ModAlt, 'Q') == nullptr);
+    CHECK(findBinding(p.cfg.base.chords, ModAlt, 'W') != nullptr);
+}
+
+void clearedShortcutCanBeRebound() {
+    auto lib = parse(kLibWithDefault);
+    auto p = parseWithLibrary("alt+q = none\nalt+q = @copy\n", lib.cfg);  // last line wins
+    CHECK(p.ok);
+    const Binding* b = findBinding(p.cfg.base.chords, ModAlt, 'Q');
+    CHECK(b != nullptr && b->out.size() == 1 && b->out[0].key == 'C');
+}
+
+void clearingAnUnboundComboIsHarmless() {
+    auto lib = parse(kLibWithDefault);
+    auto p = parseWithLibrary("alt+z = none\n", lib.cfg);
+    CHECK(p.ok);
+    CHECK(findBinding(p.cfg.base.chords, ModAlt, 'Q') != nullptr);  // default untouched
+}
+
+void clearWorksWithoutALibraryToo() {
+    auto p = parse("alt+q = @switch\n[action switch]\nalt+tab\n");
+    CHECK(p.ok && p.cfg.base.chords.size() == 1);
+    auto q = parse("alt+q = @switch\nalt+q = none\n[action switch]\nalt+tab\n");
+    CHECK(q.ok);
+    CHECK(q.cfg.base.chords.empty());  // a user binding is cleared the same way
+}
+
+void clearIsPerScope() {
+    // Clearing alt+q in a layer doesn't touch the base default.
+    auto lib = parse(kLibWithDefault);
+    auto p = parseWithLibrary("[layer CapsLock]\nalt+q = none\n", lib.cfg);
+    CHECK(p.ok);
+    CHECK(findBinding(p.cfg.base.chords, ModAlt, 'Q') != nullptr);
+}
+
+void userRedefinedActionKeepsItsDefaultShortcut() {
+    // The user redefines switch-window; the default combo now runs the user's steps.
+    auto lib = parse(kLibWithDefault);
+    auto p = parseWithLibrary("[action switch-window]\nctrl+tab\n", lib.cfg);
+    CHECK(p.ok);
+    const Binding* b = findBinding(p.cfg.base.chords, ModAlt, 'Q');
+    CHECK(b != nullptr && b->out.size() == 1 && b->out[0].mods == ModCtrl);
+}
+
 }  // namespace
 
 int main() {
@@ -243,6 +363,18 @@ int main() {
     libraryActionIsUsedWhenNotDefined();
     userActionOverridesLibrary();
     keyNameFromVk();
+    defaultShortcutIsParsedInTheLibrary();
+    severalDefaultShortcutsAndBadOnes();
+    defaultShortcutIsBoundWithoutAnyUserConfig();
+    noLibraryMeansNoDefaults();
+    userBindingReplacesTheDefault();
+    defaultShortcutCanBeCleared();
+    clearingOneDefaultKeepsTheOthers();
+    clearedShortcutCanBeRebound();
+    clearingAnUnboundComboIsHarmless();
+    clearWorksWithoutALibraryToo();
+    clearIsPerScope();
+    userRedefinedActionKeepsItsDefaultShortcut();
 
     std::cout << (g_checks - g_failures) << "/" << g_checks << " checks passed\n";
     return g_failures == 0 ? 0 : 1;
