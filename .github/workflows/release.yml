@@ -3,8 +3,8 @@ name: Release
 # Runs on a version tag (v1.2.3), on a manual run, and on pull requests. A plain push to a branch
 # (master included) does not start it.
 # Always: build and run both test suites. A version tag or a manual run also publishes the app by
-# committing it back to the default branch: release/<os>/<version>/ when there is a version,
-# release/<os>/ when there is not. Pull requests only build and test.
+# committing it back to the default branch as a single zip: release/<os>/<version>/ when there is a
+# version, release/<os>/ when there is not. Pull requests only build and test.
 on:
   push:
     tags: ['v*']
@@ -57,11 +57,19 @@ jobs:
           cp -r build/Release/web package/web
           cp build/Release/actions.txt build/Release/mappings.default.txt package/
 
-      - name: Upload the app
+      # One zip per OS. python's zipfile module is on every runner and writes the same portable
+      # (forward-slash) entries everywhere.
+      - name: Zip the app
+        shell: bash
+        run: |
+          cd package
+          python -m zipfile -c "../keymapper-${{ matrix.os }}.zip" *
+
+      - name: Upload the zip
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}
-          path: package
+          path: keymapper-${{ matrix.os }}.zip
           if-no-files-found: error
 
   # Only for a version tag or a manual run: commit the builds into the repo.
@@ -104,7 +112,7 @@ jobs:
         with:
           path: staging  # one sub-folder per artifact, named after the os
 
-      - name: Place them in release/<os>/[<version>/]
+      - name: Place the zips in release/<os>/[<version>/]
         shell: bash
         env:
           VERSION: ${{ steps.version.outputs.value }}
@@ -114,13 +122,10 @@ jobs:
             dest="release/$os"
             [[ -n "$VERSION" ]] && dest="$dest/$VERSION"
             mkdir -p "$dest"
-            # Replace what this build ships and leave the rest alone, so publishing without a version
-            # keeps the version folders that already live in release/<os>/.
-            for item in "$osdir"*; do
-              rm -rf "$dest/$(basename "$item")"
-              cp -r "$item" "$dest/"
-            done
-            echo "published $os to $dest"
+            # keymapper-<os>.zip, or keymapper-<os>-<version>.zip. Only this file is replaced, so
+            # publishing without a version leaves the version folders inside release/<os>/ alone.
+            cp "${osdir}keymapper-$os.zip" "$dest/keymapper-$os${VERSION:+-$VERSION}.zip"
+            echo "published $os to $dest/keymapper-$os${VERSION:+-$VERSION}.zip"
           done
 
       - name: Commit and push
