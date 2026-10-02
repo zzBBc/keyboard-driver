@@ -214,16 +214,16 @@ bool parseConfig(const std::string& text, Config& out, std::vector<std::string>&
 
         Binding binding;
         binding.from = fromChord;
-        std::string actionName;
+        std::string boundAction;
         if (!to.empty() && to.front() == '@') {
-            actionName = lower(trim(to.substr(1)));
-            if (!validActionName(actionName)) { fail(lineNo, "invalid action name '" + to.substr(1) + "'"); continue; }
+            boundAction = lower(trim(to.substr(1)));
+            if (!validActionName(boundAction)) { fail(lineNo, "invalid action name '" + to.substr(1) + "'"); continue; }
         } else if (!parseSteps(to, binding.out, err)) {
             fail(lineNo, err);
             continue;
         }
 
-        const bool plain = actionName.empty() && fromChord.mods == 0 && binding.out.size() == 1 && binding.out[0].mods == 0;
+        const bool plain = boundAction.empty() && fromChord.mods == 0 && binding.out.size() == 1 && binding.out[0].mods == 0;
         if (plain) {
             scope->map[fromChord.key] = binding.out[0].key;
             continue;
@@ -234,7 +234,7 @@ bool parseConfig(const std::string& text, Config& out, std::vector<std::string>&
         for (size_t i = 0; i < list.size(); ++i)
             if (list[i].from.mods == fromChord.mods && list[i].from.key == fromChord.key) idx = i;
         if (idx == list.size()) list.push_back(binding); else list[idx] = binding;
-        if (!actionName.empty()) pending.push_back({lineNo, actionName, scopeLayer, idx});
+        if (!boundAction.empty()) pending.push_back({lineNo, boundAction, scopeLayer, idx});
     }
 
     for (const auto& p : pending) {

@@ -143,12 +143,24 @@ node --test "tests/web/*.test.js"
 
 ## Layout
 
-- `src/hook.cpp`: keyboard hook, Raw Input attribution, remapping
-- `src/server.cpp`: localhost HTTP server and API (`/api/config`, `/api/devices`, `/api/keys`,
-  `/api/actions`), and the GUI's scripts and styles from `web/` (`src/static_files.cpp` decides
-  which paths and file types may be served)
-- `src/config_loader.cpp`, `src/key_names.cpp`: config parsing and key names
-- `src/matcher.cpp`: chord matching and key-event expansion (unit tested)
+The program is a portable core plus one small layer per operating system:
+
+- `src/core/`: no OS calls. Config parsing (`config_loader`), key names and portable key ids
+  (`key_names`, `keycodes.h`; the ids equal Windows virtual-key codes, other OSes translate to and
+  from them), chord matching (`matcher`), the **engine** (`engine`: given each physical key event
+  and the keyboard it came from, decides whether to swallow it and which keys to inject), and the
+  rules for which GUI files may be served (`static_files`). Built as the `keymapper_core` library.
+- `src/server/server.cpp`: localhost HTTP server and API (`/api/config`, `/api/devices`,
+  `/api/keys`, `/api/actions`) plus the GUI's scripts and styles from `web/`. It uses
+  `std::filesystem` and a small Winsock/BSD sockets shim, so it is portable too.
+- `src/platform/platform.h`: what the program needs from the OS (find the install folder, list
+  keyboards, intercept keys and inject the engine's output).
+  `src/platform/windows/windows_platform.cpp` implements it with a low-level keyboard hook, Raw
+  Input (to tell keyboards apart) and `SendInput`.
+- `src/main.cpp`: loads configs, creates the engine, starts the server and the platform hook.
+
+To port to another OS (for example macOS), add `src/platform/<os>/` implementing `platform.h` and
+list it in `CMakeLists.txt`. Nothing in `core/`, `server/`, `web/` or the config format changes.
 - `config/actions.txt`: built-in actions library
 - `tests/`: C++ tests, one file per area (`config_`, `matcher_`, `keys_`, `engine_`, `static_files_tests.cpp`)
   on a tiny shared harness (`harness.h`: write `TEST(name) { CHECK(...); }`, it registers itself);
