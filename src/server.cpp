@@ -12,6 +12,7 @@
 #include "config_loader.h"
 #include "hook.h"
 #include "key_names.h"
+#include "static_files.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -231,6 +232,15 @@ void handle(SOCKET s, const ServerOptions& opts) {
                 return respond(s, 500, "Error", "text/plain", "cannot write " + file);
             setConfig(device, std::move(cfg));
             return respond(s, 200, "OK", "text/plain", "ok");
+        }
+    }
+    // The GUI's scripts and styles: GET /js/app.js, /css/app.css, ... from the web folder.
+    if (req.method == "GET" && isSafeStaticPath(target.path)) {
+        if (const char* type = contentTypeFor(target.path)) {
+            std::string file = opts.webDir + target.path;
+            std::replace(file.begin(), file.end(), '/', '\\');
+            std::string body;
+            if (readFile(file, body)) return respond(s, 200, "OK", type, body);
         }
     }
     respond(s, 404, "Not Found", "text/plain", "not found");

@@ -11,6 +11,7 @@ add_executable(keymapper
     src/hook.cpp
     src/matcher.cpp
     src/server.cpp
+    src/static_files.cpp
 )
 target_include_directories(keymapper PRIVATE src)
 target_compile_definitions(keymapper PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
@@ -35,6 +36,7 @@ add_executable(keymapper_tests
     src/key_names.cpp
     src/config_loader.cpp
     src/matcher.cpp
+    src/static_files.cpp
 )
 target_include_directories(keymapper_tests PRIVATE src)
 target_compile_definitions(keymapper_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
