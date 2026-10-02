@@ -342,6 +342,39 @@ void userRedefinedActionKeepsItsDefaultShortcut() {
     CHECK(b != nullptr && b->out.size() == 1 && b->out[0].mods == ModCtrl);
 }
 
+// ---- media keys ----
+
+void mediaKeyNames() {
+    CHECK(vkFromName("volumeup").value_or(0) == VK_VOLUME_UP);
+    CHECK(vkFromName("volumedown").value_or(0) == VK_VOLUME_DOWN);
+    CHECK(vkFromName("mute").value_or(0) == VK_VOLUME_MUTE);
+    CHECK(vkFromName("playpause").value_or(0) == VK_MEDIA_PLAY_PAUSE);
+    CHECK(vkFromName("nexttrack").value_or(0) == VK_MEDIA_NEXT_TRACK);
+    CHECK(vkFromName("previoustrack").value_or(0) == VK_MEDIA_PREV_TRACK);
+    CHECK(vkFromName("browserback").value_or(0) == VK_BROWSER_BACK);
+    CHECK(nameFromVk(VK_VOLUME_UP) == "volumeup");  // reverse lookup works for them too
+}
+
+void mediaKeyActionIsBindable() {
+    auto lib = parse("[action volume-up]\ndescription: Raise the volume\nvolumeup\n");
+    CHECK(lib.ok);
+    CHECK(lib.cfg.actions["volume-up"].size() == 1 && lib.cfg.actions["volume-up"][0].key == VK_VOLUME_UP);
+    CHECK(lib.cfg.actionShortcuts.count("volume-up") == 0);  // no default combo
+
+    Config cfg;
+    std::vector<std::string> errors;
+    CHECK(parseConfig("alt+up = @volume-up\n", cfg, errors, &lib.cfg));
+    const Binding* b = findBinding(cfg.base.chords, ModAlt, VK_UP);
+    CHECK(b != nullptr && b->out.size() == 1 && b->out[0].mods == 0 && b->out[0].key == VK_VOLUME_UP);
+    CHECK(cfg.base.chords.size() == 1);  // and nothing else got bound by default
+}
+
+void mediaKeyWorksInComboOutput() {
+    auto p = parse("alt+down = volumedown\n");  // a media key as the plain target of a combo
+    CHECK(p.ok);
+    CHECK(p.cfg.base.chords.size() == 1 && p.cfg.base.chords[0].out[0].key == VK_VOLUME_DOWN);
+}
+
 }  // namespace
 
 int main() {
@@ -375,6 +408,9 @@ int main() {
     clearWorksWithoutALibraryToo();
     clearIsPerScope();
     userRedefinedActionKeepsItsDefaultShortcut();
+    mediaKeyNames();
+    mediaKeyActionIsBindable();
+    mediaKeyWorksInComboOutput();
 
     std::cout << (g_checks - g_failures) << "/" << g_checks << " checks passed\n";
     return g_failures == 0 ? 0 : 1;
