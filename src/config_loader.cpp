@@ -99,6 +99,8 @@ bool parseConfig(const std::string& text, Config& out, std::vector<std::string>&
     Steps* action = nullptr;
     std::string actionName;
     std::vector<Pending> pending;
+    std::vector<KeyChord> touchedBase;  // combos the config binds or clears in the base scope
+    auto sameChord = [](const KeyChord& a, const KeyChord& b) { return a.mods == b.mods && a.key == b.key; };
 
     std::istringstream in(text);
     std::string line;
@@ -155,6 +157,14 @@ bool parseConfig(const std::string& text, Config& out, std::vector<std::string>&
         };
 
         if (mode == Mode::Action) {
+            static const std::string kShortcut = "shortcut:";
+            if (lower(line.substr(0, kShortcut.size())) == kShortcut) {
+                KeyChord combo;
+                std::string comboErr;
+                if (!parseChord(trim(line.substr(kShortcut.size())), combo, comboErr)) fail(lineNo, comboErr);
+                else out.actionShortcuts[actionName].push_back(combo);
+                continue;
+            }
             static const std::string kDesc = "description:";
             if (lower(line.substr(0, kDesc.size())) == kDesc) {
                 out.actionInfo[actionName] = trim(line.substr(kDesc.size()));
@@ -178,6 +188,23 @@ bool parseConfig(const std::string& text, Config& out, std::vector<std::string>&
         KeyChord fromChord;
         std::string err;
         if (!parseChord(from, fromChord, err)) { fail(lineNo, err); continue; }
+
+        if (scopeLayer < 0) touchedBase.push_back(fromChord);
+
+        if (lower(to) == "none") {  // clear: drop whatever this scope binds for the combo
+            if (fromChord.mods == 0) scope->map.erase(fromChord.key);
+            auto& chords = scope->chords;
+            for (size_t i = 0; i < chords.size(); ++i) {
+                if (!sameChord(chords[i].from, fromChord)) continue;
+                chords.erase(chords.begin() + i);
+                for (size_t k = 0; k < pending.size();) {  // keep pending indexes in step
+                    if (pending[k].layer == scopeLayer && pending[k].index == i) pending.erase(pending.begin() + k);
+                    else { if (pending[k].layer == scopeLayer && pending[k].index > i) --pending[k].index; ++k; }
+                }
+                break;
+            }
+            continue;
+        }
 
         Binding binding;
         binding.from = fromChord;
@@ -213,6 +240,23 @@ bool parseConfig(const std::string& text, Config& out, std::vector<std::string>&
         if (steps->empty()) { fail(p.lineNo, "action '" + p.action + "' has no steps"); continue; }
         Scope& s = p.layer < 0 ? out.base : out.layers[p.layer];
         s.chords[p.index].out = *steps;
+    }
+
+    // Default shortcuts of library actions, unless the config bound or cleared that combo.
+    if (library) {
+        for (const auto& [name, combos] : library->actionShortcuts) {
+            const Steps* steps = nullptr;
+            if (auto it = out.actions.find(name); it != out.actions.end()) steps = &it->second;  // user's version wins
+            else if (auto lit = library->actions.find(name); lit != library->actions.end()) steps = &lit->second;
+            if (!steps || steps->empty()) continue;
+            for (const KeyChord& combo : combos) {
+                bool touched = false;
+                for (const auto& t : touchedBase) touched = touched || sameChord(t, combo);
+                if (touched) continue;
+                out.base.chords.push_back(Binding{combo, *steps});
+                touchedBase.push_back(combo);  // the first action to claim a combo keeps it
+            }
+        }
     }
     return errors.size() == errorsBefore;
 }

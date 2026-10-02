@@ -82,10 +82,18 @@ ctrl+c, ctrl+v               # steps run in order
   the Windows switcher stays open while you keep Alt down. Other held modifiers are released
   for the step and put back afterwards.
 - Optional `description: text` as the first line of an action shows in the GUI.
+- A library action can declare default combos with `shortcut: alt+q` lines. They are bound in
+  Base unless your config binds that combo itself or clears it with `alt+q = none`. In the
+  GUI a default shows as a chip marked "(default)"; its × writes the `none` line. The shipped
+  defaults are `alt+q` = switch-window, `alt+shift+q` = previous-window, `alt+a` = task-view.
 - A `from = to` line after an action block ends that block. Actions work in base, layers and
   per-keyboard files. The GUI's **Actions** tab lists every action; click **+ Shortcut** on one
-  and press the keys (or tick Ctrl/Alt/Shift/Win and pick a key) to bind it. The keyboard
+  and press the keys (or tick Ctrl/Alt/Shift/Win and pick a key) to bind it. **Remove shortcut**
+  (or a chip's ×) removes only the key combo; the action stays in the list. The keyboard
   picture also has Ctrl/Alt/Shift/Win checkboxes for binding combos.
+- **Change keys** on an action changes what it sends (for example Undo sends `alt+z` instead of
+  `ctrl+z`). It is saved as your own `[action undo]` block, which overrides the built-in one;
+  **Reset keys** deletes that block. Its shortcuts, including defaults, keep working.
 
 **Built-in actions** (`config/actions.txt`, copied next to the exe on every build) are about 30
 common shortcuts such as `switch-window`, `close-window`, `show-desktop`, `copy`, `next-tab`.

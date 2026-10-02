@@ -174,13 +174,16 @@ void handle(SOCKET s, const ServerOptions& opts) {
         return respond(s, 200, "OK", "text/plain; charset=utf-8", out);
     }
     if (req.method == "GET" && req.path == "/api/actions") {
-        // Built-in actions, one per line: name <TAB> description <TAB> steps ("ctrl+c, ctrl+v").
+        // Built-in actions, one per line: name, description, steps ("ctrl+c, ctrl+v"), default shortcuts; tab-separated.
         std::string out;
         if (opts.library)
             for (const auto& [name, steps] : opts.library->actions) {
                 std::string desc;
                 if (auto it = opts.library->actionInfo.find(name); it != opts.library->actionInfo.end()) desc = it->second;
-                out += name + "\t" + desc + "\t" + stepsToText(steps) + "\n";
+                std::string shortcuts;
+                if (auto sc = opts.library->actionShortcuts.find(name); sc != opts.library->actionShortcuts.end())
+                    shortcuts = stepsToText(sc->second);
+                out += name + "\t" + desc + "\t" + stepsToText(steps) + "\t" + shortcuts + "\n";
             }
         return respond(s, 200, "OK", "text/plain; charset=utf-8", out);
     }
