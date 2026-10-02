@@ -1,0 +1,9 @@
+name: PR
+
+# Pull requests build and run both test suites, nothing is published.
+on:
+  pull_request:
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
