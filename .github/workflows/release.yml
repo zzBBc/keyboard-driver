@@ -1,0 +1,121 @@
+name: Release
+
+# Every push and pull request: build and run both test suites.
+# A version tag (v1.2.3), or a manual run with a version, also packages the app into
+# release/<version>/<os>/ and commits that folder back to the default branch.
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version folder to publish under release/ (for example v1.2.3)'
+        required: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows
+            runner: windows-latest
+          # Add macos / linux here once src/platform/<os>/ exists.
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configure
+        run: cmake -S . -B build
+
+      - name: Build (Release)
+        run: cmake --build build --config Release
+
+      - name: C++ tests
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: GUI tests
+        shell: bash
+        run: node --test "tests/web/*.test.js"
+
+      # The build leaves everything the app needs next to the exe (web/, actions.txt,
+      # mappings.default.txt); pick just those, not the test binary or the static library.
+      - name: Collect the app
+        shell: bash
+        run: |
+          mkdir -p package
+          cp build/Release/keymapper.exe package/
+          cp -r build/Release/web package/web
+          cp build/Release/actions.txt build/Release/mappings.default.txt package/
+          cp README.md package/
+
+      - name: Upload the app
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}
+          path: package
+          if-no-files-found: error
+
+  # Only for a version tag or a manual run: commit the builds into release/<version>/<os>/.
+  publish:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: publish-release  # one push at a time
+      cancel-in-progress: false
+
+    steps:
+      - name: Work out the version
+        id: version
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}  # via env, never pasted into the script
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            version="$INPUT_VERSION"
+          else
+            version="${GITHUB_REF#refs/tags/}"
+          fi
+          # the version becomes a folder name: keep it to a plain, safe string
+          if [[ ! "$version" =~ ^[A-Za-z0-9._-]+$ || "$version" == .* ]]; then
+            echo "Invalid version '$version'" >&2
+            exit 1
+          fi
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+
+      # The branch, not the tag: a tag checkout is detached and can't be pushed to.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Download the builds into release/<version>/<os>/
+        uses: actions/download-artifact@v4
+        with:
+          path: release/${{ steps.version.outputs.value }}  # one sub-folder per artifact, named after the os
+
+      - name: Commit and push
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+          BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A "release/$VERSION"
+          if git diff --cached --quiet; then
+            echo "release/$VERSION is already up to date"
+            exit 0
+          fi
+          git commit -m "chore: add release $VERSION builds"
+          git pull --rebase origin "$BRANCH"
+          git push origin "HEAD:$BRANCH"

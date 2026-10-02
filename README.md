@@ -15,6 +15,19 @@ cmake --build build --config Release
 The build copies `web/`, the built-in actions (`actions.txt`) and the default config
 (`mappings.default.txt`) next to the exe in `build\Release\`.
 
+### Releases (CI)
+
+`.github/workflows/release.yml` (GitHub Actions) builds and runs both test suites on every push and
+pull request. Pushing a tag such as `v1.2.3` (or running the workflow by hand with a version) also
+publishes: the app is packaged into `release/<version>/<os>/` (`keymapper.exe`, `web/`, `actions.txt`,
+`mappings.default.txt`, this README) and the workflow commits that folder to the default branch as
+`chore: add release <version> builds`. Only `windows` exists today; add a matrix entry when another
+platform layer does.
+
+For the publish step to push, the repository's Settings > Actions > General > Workflow permissions
+must allow read and write, and branch protection must let `github-actions[bot]` push. Each release
+adds its binaries to the repository history.
+
 ## Run
 
 ```
