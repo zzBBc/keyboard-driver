@@ -1,5 +1,7 @@
 #include "hook.h"
 
+#include "matcher.h"
+
 #include <windows.h>
 #include <hidsdi.h>
 
@@ -46,7 +48,9 @@ std::string g_lastDevice;
 // Hook-thread-only state.
 struct DeviceState {
     std::unordered_set<unsigned short> heldTriggers;          // layer keys currently down
-    std::unordered_map<unsigned short, unsigned short> down;  // physical key -> key we sent for it
+    // physical key -> key we sent for it (0 = swallowed, e.g. it ran a chord binding)
+    std::unordered_map<unsigned short, unsigned short> down;
+    std::vector<unsigned short> heldMods;  // modifier keys physically down
 };
 std::map<std::string, DeviceState> g_state;
 std::deque<RawEvent> g_pending;
@@ -120,8 +124,18 @@ const unsigned short* resolve(const Config& cfg, const DeviceState& st, unsigned
         if (!st.heldTriggers.count(layer.trigger)) continue;
         if (auto it = layer.map.find(vk); it != layer.map.end()) return &it->second;
     }
-    if (auto it = cfg.base.find(vk); it != cfg.base.end()) return &it->second;
+    if (auto it = cfg.base.map.find(vk); it != cfg.base.map.end()) return &it->second;
     return nullptr;
+}
+
+// Binding for this chord: active layers first (in config order), then the base.
+const Binding* resolveChord(const Config& cfg, const DeviceState& st, unsigned short vk) {
+    const unsigned mods = modsOf(st.heldMods);
+    for (const auto& layer : cfg.layers) {
+        if (!st.heldTriggers.count(layer.trigger)) continue;
+        if (const Binding* b = findBinding(layer.chords, mods, vk)) return b;
+    }
+    return findBinding(cfg.base.chords, mods, vk);
 }
 
 // Which keyboard produced this hook event? Falls back to the last known one if Raw Input
@@ -154,6 +168,13 @@ LRESULT CALLBACK lowLevelKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
 
     const std::string dev = attribute(*kb, up);
     DeviceState& st = g_state[dev];
+
+    if (modBit(vk)) {  // track physical modifiers for chord bindings
+        auto& mods = st.heldMods;
+        auto it = std::find(mods.begin(), mods.end(), vk);
+        if (up && it != mods.end()) mods.erase(it);
+        else if (!up && it == mods.end()) mods.push_back(vk);
+    }
     const Config& cfg = *(profiles->devices.count(dev) ? profiles->devices.at(dev) : profiles->def);
 
     if (up) {
@@ -162,7 +183,7 @@ LRESULT CALLBACK lowLevelKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
         auto release = [&](DeviceState& s) {
             if (s.heldTriggers.erase(vk)) return true;
             if (auto it = s.down.find(vk); it != s.down.end()) {
-                sendKey(it->second, true);  // release what we pressed, even if the layer is gone
+                if (it->second) sendKey(it->second, true);  // release what we pressed, even if the layer is gone
                 s.down.erase(it);
                 return true;
             }
@@ -179,8 +200,15 @@ LRESULT CALLBACK lowLevelKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
         return 1;
     }
     if (auto it = st.down.find(vk); it != st.down.end()) {  // auto-repeat of a remapped key
-        sendKey(it->second, false);
+        if (it->second) sendKey(it->second, false);
         return 1;
+    }
+    if (!modBit(vk)) {
+        if (const Binding* b = resolveChord(cfg, st, vk)) {
+            for (const KeyEvent& e : expand(b->out, st.heldMods)) sendKey(e.vk, e.up);
+            st.down[vk] = 0;  // swallow the trigger key's release (and auto-repeat) too
+            return 1;
+        }
     }
     if (const unsigned short* to = resolve(cfg, st, vk)) {
         st.down[vk] = *to;

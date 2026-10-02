@@ -54,6 +54,12 @@
   .kedit { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; color: var(--muted); }
   .kedit input { width: 130px; }
   .kedit button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .kmods { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; color: var(--muted); }
+  .kmods label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+  .action { border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin-bottom: 12px; }
+  .action .head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .action .head input { font-weight: 600; width: 220px; }
+  .hint { color: var(--muted); margin: 0 0 12px; }
   .empty { color: var(--muted); padding: 8px 0 12px; }
 </style>
 </head>
@@ -80,38 +86,76 @@
   <button id="save" class="primary">Save</button>
 </div></div>
 <datalist id="keys"></datalist>
+<datalist id="targets"></datalist>
 
 <script>
 // state: { base: [[from, to]], layers: [{ trigger, maps: [[from, to]] }] }
 const $ = id => document.getElementById(id);
-let state = { base: [], layers: [] }, saved = '', current = 'base', validKeys = new Set();
+let state = { base: [], layers: [], actions: [] }, saved = '', current = 'base', validKeys = new Set();
+let allKeyNames = [];
 let device = '';   // '' = default config, else a hardware id
 let devices = [];  // [{ id, own, name }]
 let lastKb = '';
 
+const MODS = ['ctrl', 'alt', 'shift', 'win'];
+const ACTION_NAME = /^[a-z0-9_-]+$/;
+
+// Same rule as the server: the '=' of "from = to" is not the one in "alt+=".
+function findEq(line) {
+  let eq = line.indexOf('=', 1);
+  while (eq > 0 && line[eq - 1] === '+') eq = line.indexOf('=', eq + 1);
+  return eq;
+}
+
 function parse(text) {
-  const s = { base: [], layers: [] };
-  let list = s.base;
+  const s = { base: [], layers: [], actions: [] };
+  let list = s.base, action = null;
   for (let line of text.split('\n')) {
     const hash = line.indexOf('#'); if (hash >= 0) line = line.slice(0, hash);
     line = line.trim(); if (!line) continue;
     if (line.startsWith('[') && line.endsWith(']')) {
       const inner = line.slice(1, -1).trim();
+      action = null;
       if (inner.toLowerCase() === 'base') list = s.base;
       else if (/^layer\b/i.test(inner)) { const l = { trigger: inner.slice(5).trim(), maps: [] }; s.layers.push(l); list = l.maps; }
+      else if (/^action\b/i.test(inner)) { action = { name: inner.slice(6).trim().toLowerCase(), steps: [] }; s.actions.push(action); }
       continue;
     }
-    const eq = line.indexOf('=', 1); if (eq < 0) continue;
+    const eq = findEq(line);
+    if (action && eq < 0) { action.steps.push(line); continue; }
+    if (action) { action = null; list = s.base; }  // a "from = to" line ends the action
+    if (eq < 0) continue;
     list.push([line.slice(0, eq).trim(), line.slice(eq + 1).trim()]);
   }
   return s;
 }
 
+// Base mappings first (they must precede any section header), then actions, then layers.
 function serialize(s) {
   const rows = m => m.filter(([a, b]) => a || b).map(([a, b]) => `${a} = ${b}`);
-  let out = rows(s.base).join('\n');
-  for (const l of s.layers) out += `${out ? '\n\n' : ''}[layer ${l.trigger}]\n${rows(l.maps).join('\n')}`;
-  return out + '\n';
+  const blocks = [];
+  if (rows(s.base).length) blocks.push(rows(s.base).join('\n'));
+  for (const a of s.actions) blocks.push(`[action ${a.name}]\n${a.steps.filter(Boolean).join('\n')}`);
+  for (const l of s.layers) blocks.push(`[layer ${l.trigger}]\n${rows(l.maps).join('\n')}`);
+  return blocks.join('\n\n') + '\n';
+}
+
+// "Alt + q" -> "alt+q"; modifiers in a fixed order so "shift+ctrl+a" equals "ctrl+shift+a".
+function normChord(str) {
+  const parts = str.split('+').map(x => x.trim().toLowerCase());
+  const key = parts.pop();
+  return [...MODS.filter(m => parts.includes(m)), key].join('+');
+}
+function validChord(str) {
+  const parts = str.split('+').map(x => x.trim().toLowerCase());
+  const key = parts.pop();
+  return !!key && (validKeys.size === 0 || validKeys.has(key)) && parts.every(m => MODS.includes(m));
+}
+function validSteps(str) { return !!str && (validChord(str) || str.split(',').every(x => validChord(x))); }
+function actionNames() { return state.actions.map(a => a.name); }
+function validTarget(str) {
+  if (str.startsWith('@')) return actionNames().includes(str.slice(1).trim().toLowerCase());
+  return validSteps(str);
 }
 
 // Keyboard picture. Rows of [name, width in units] or a number (blank gap).
@@ -125,11 +169,27 @@ const KB_ROWS = [
 ];
 const KB_LABELS = { esc: 'Esc', printscreen: 'PrtSc', scrolllock: 'ScrLk', pause: 'Pause', backspace: 'Bksp', insert: 'Ins', home: 'Home', pageup: 'PgUp', delete: 'Del', end: 'End', pagedown: 'PgDn', tab: 'Tab', capslock: 'Caps', enter: 'Enter', lshift: 'Shift', rshift: 'Shift', lctrl: 'Ctrl', rctrl: 'Ctrl', lwin: 'Win', rwin: 'Win', lalt: 'Alt', ralt: 'AltGr', apps: 'Menu', space: 'Space', up: '\u2191', down: '\u2193', left: '\u2190', right: '\u2192' };
 const keyLabel = n => KB_LABELS[n] || (n.length === 1 || /^f\d+$/.test(n) ? n.toUpperCase() : n);
-let selKey = '', picking = false;
+const chordLabel = c => c.split('+').map(x => MODS.includes(x) ? x[0].toUpperCase() + x.slice(1) : keyLabel(x)).join('+');
+// Short text for what a key becomes: a key name, a chord, or "@action".
+const targetLabel = t => t.startsWith('@') ? t : (t.includes(',') ? t : chordLabel(normChord(t)));
+let selKey = '', picking = false, selMods = [];
+
+const fromStr = name => [...MODS.filter(m => selMods.includes(m)), name].join('+');
 
 function buildKeyboard(list, trigger) {
   const wrap = document.createElement('div');
-  const find = name => list.findIndex(x => x[0].toLowerCase() === name);
+  const find = name => list.findIndex(x => normChord(x[0]) === fromStr(name));
+
+  // Modifier checkboxes: pick Alt, then click Q to edit "alt+q".
+  const mods = document.createElement('div'); mods.className = 'kmods';
+  mods.append('With:');
+  for (const m of MODS) {
+    const l = document.createElement('label'), c = document.createElement('input');
+    c.type = 'checkbox'; c.checked = selMods.includes(m);
+    c.onchange = () => { selMods = c.checked ? [...selMods, m] : selMods.filter(x => x !== m); picking = false; render(); };
+    l.append(c, m[0].toUpperCase() + m.slice(1)); mods.appendChild(l);
+  }
+  wrap.appendChild(mods);
 
   const scroll = document.createElement('div'); scroll.className = 'kbd-scroll';
   const kbd = document.createElement('div'); kbd.className = 'kbd';
@@ -142,16 +202,16 @@ function buildKeyboard(list, trigger) {
       k.style.width = `calc(var(--u) * ${w} + ${(w - 1) * 4}px)`;
       const main = document.createElement('span'); main.textContent = keyLabel(name); k.appendChild(main);
       const i = find(name);
-      const isTrig = !!trigger && trigger.toLowerCase() === name;
-      const isLayerKey = !trigger && state.layers.some(l => l.trigger.toLowerCase() === name);
+      const isTrig = !selMods.length && !!trigger && trigger.toLowerCase() === name;
+      const isLayerKey = !selMods.length && !trigger && state.layers.some(l => l.trigger.toLowerCase() === name);
       if (isTrig) { k.classList.add('trig'); k.title = 'Layer key'; const sm = document.createElement('small'); sm.textContent = 'layer'; k.appendChild(sm); }
-      else if (i >= 0 && list[i][1]) { k.classList.add('mapped'); const sm = document.createElement('small'); sm.textContent = '\u2192 ' + keyLabel(list[i][1].toLowerCase()); k.appendChild(sm); k.title = `${name} \u2192 ${list[i][1]}`; }
+      else if (i >= 0 && list[i][1]) { k.classList.add('mapped'); const sm = document.createElement('small'); sm.textContent = '\u2192 ' + targetLabel(list[i][1]); k.appendChild(sm); k.title = `${list[i][0]} \u2192 ${list[i][1]}`; }
       else if (isLayerKey) { const sm = document.createElement('small'); sm.textContent = 'layer'; k.appendChild(sm); }
       if (name === selKey) k.classList.add('sel');
       if (picking) k.classList.add('picking');
       k.onclick = () => {
         if (isTrig) return;
-        if (picking && selKey) { setTarget(list, selKey, name); picking = false; return render(); }
+        if (picking && selKey) { setTarget(list, fromStr(selKey), name); picking = false; return render(); }
         selKey = name === selKey ? '' : name; picking = false; render();
       };
       r.appendChild(k);
@@ -161,28 +221,68 @@ function buildKeyboard(list, trigger) {
   scroll.appendChild(kbd); wrap.appendChild(scroll);
 
   const ed = document.createElement('div'); ed.className = 'kedit';
-  if (!selKey) ed.textContent = 'Click a key to choose what it should become.';
+  if (!selKey) ed.textContent = 'Click a key to choose what it should become. Tick modifiers first to bind a combo like Alt+Q.';
   else {
     const i = find(selKey);
-    const input = keyInput(i >= 0 ? list[i][1] : '', () => {});
-    input.onchange = () => { setTarget(list, selKey, input.value.trim()); render(); };
+    const input = keyInput(i >= 0 ? list[i][1] : '', () => {}, 'to');
+    input.onchange = () => { setTarget(list, fromStr(selKey), input.value.trim()); render(); };
     const pick = document.createElement('button'); pick.textContent = picking ? 'Click a key\u2026' : 'Pick on keyboard'; pick.className = picking ? 'on' : '';
     pick.onclick = () => { picking = !picking; render(); };
     const clear = document.createElement('button'); clear.textContent = 'Clear'; clear.disabled = i < 0;
-    clear.onclick = () => { setTarget(list, selKey, ''); render(); };
-    const strong = document.createElement('b'); strong.textContent = keyLabel(selKey); strong.style.color = 'var(--text)';
+    clear.onclick = () => { setTarget(list, fromStr(selKey), ''); render(); };
+    const strong = document.createElement('b'); strong.textContent = chordLabel(fromStr(selKey)); strong.style.color = 'var(--text)';
     ed.append(strong, ' becomes ', input, pick, clear);
+    const hint = document.createElement('div'); hint.style.flexBasis = '100%';
+    hint.textContent = 'Type a key (tab), a combo (ctrl+shift+tab), steps (ctrl+c, ctrl+v) or an action (@' + (state.actions[0] ? state.actions[0].name : 'name') + ').';
+    ed.appendChild(hint);
   }
   wrap.appendChild(ed);
   return wrap;
 }
 
-// Set (or with '' remove) the mapping for `from` in this list.
+// Set (or with '' remove) the mapping for `from` (a canonical chord string) in this list.
 function setTarget(list, from, to) {
-  const i = list.findIndex(x => x[0].toLowerCase() === from);
+  const i = list.findIndex(x => normChord(x[0]) === from);
   if (!to) { if (i >= 0) list.splice(i, 1); }
   else if (i >= 0) list[i][1] = to;
   else list.push([from, to]);
+}
+
+// ---- Actions tab ----
+function renderActions(p) {
+  const hint = document.createElement('p'); hint.className = 'hint';
+  hint.textContent = 'An action is a named list of steps. Bind it to a key or combo as "alt+q = @name" from the Base tab or any layer. Each step is a key or combo (alt+tab); separate several with commas (ctrl+c, ctrl+v).';
+  p.appendChild(hint);
+  if (!state.actions.length) { const e = document.createElement('div'); e.className = 'empty'; e.textContent = 'No actions yet.'; p.appendChild(e); }
+
+  state.actions.forEach((a, ai) => {
+    const box = document.createElement('div'); box.className = 'action';
+    const head = document.createElement('div'); head.className = 'head';
+    const name = document.createElement('input'); name.value = a.name; name.placeholder = 'action-name'; name.spellcheck = false;
+    const checkName = () => name.classList.toggle('invalid', !ACTION_NAME.test(name.value.trim()) || state.actions.some((o, oi) => oi !== ai && o.name === name.value.trim().toLowerCase()));
+    name.oninput = () => { a.name = name.value.trim().toLowerCase(); checkName(); updateMeta(); };
+    name.onchange = () => render();  // refresh the @action suggestions
+    checkName();
+    const del = document.createElement('button'); del.textContent = 'Delete action';
+    del.onclick = () => { state.actions.splice(ai, 1); render(); };
+    head.append(name, del); box.appendChild(head);
+
+    a.steps.forEach((step, si) => {
+      const r = document.createElement('div'); r.className = 'row';
+      const x = document.createElement('button'); x.textContent = '\u00d7'; x.title = 'Remove step';
+      x.onclick = () => { a.steps.splice(si, 1); render(); };
+      r.append(keyInput(step, v => a.steps[si] = v, 'step'), x); box.appendChild(r);
+    });
+    const add = document.createElement('button'); add.textContent = '+ Add step';
+    add.onclick = () => { a.steps.push(''); render(); const ins = box.querySelectorAll('.row input'); ins[ins.length - 1].focus(); };
+    box.appendChild(add);
+    p.appendChild(box);
+  });
+
+  const act = document.createElement('div'); act.className = 'actions';
+  const add = document.createElement('button'); add.textContent = '+ Action';
+  add.onclick = () => { state.actions.push({ name: '', steps: [''] }); render(); const ins = p.querySelectorAll('.action .head input'); ins[ins.length - 1].focus(); };
+  act.appendChild(add); p.appendChild(act);
 }
 
 function maps() { return current === 'base' ? state.base : state.layers[current].maps; }
@@ -193,14 +293,17 @@ function render() {
     const b = document.createElement('button');
     b.className = 'tab ' + (cls || ''); b.textContent = label; b.setAttribute('role', 'tab');
     b.setAttribute('aria-selected', String(current === key));
-    b.onclick = () => { if (key === 'add') addLayer(); else { current = key; selKey = ''; picking = false; render(); } };
+    b.onclick = () => { if (key === 'add') addLayer(); else { current = key; selKey = ''; picking = false; selMods = []; render(); } };
     tabs.appendChild(b);
   };
   mk('Base', 'base');
   state.layers.forEach((l, i) => mk(`Layer: ${l.trigger || '?'}`, i));
+  mk('Actions', 'actions');
   mk('+ Layer', 'add', 'add');
 
   const p = $('panel'); p.innerHTML = '';
+  $('targets').innerHTML = [...allKeyNames, ...actionNames().filter(Boolean).map(n => '@' + n)].map(n => `<option value="${n}">`).join('');
+  if (current === 'actions') { renderActions(p); updateMeta(); return; }
   const isLayer = current !== 'base';
   const list = maps();
 
@@ -217,7 +320,7 @@ function render() {
     const arrow = document.createElement('span'); arrow.className = 'arrow'; arrow.textContent = '→';
     const d = document.createElement('button'); d.textContent = '×'; d.title = 'Remove';
     d.onclick = () => { list.splice(i, 1); render(); };
-    r.append(keyInput(pair[0], v => pair[0] = v), arrow, keyInput(pair[1], v => pair[1] = v), d);
+    r.append(keyInput(pair[0], v => pair[0] = v, 'from'), arrow, keyInput(pair[1], v => pair[1] = v, 'to'), d);
     p.appendChild(r);
   });
 
@@ -242,10 +345,12 @@ function renderTabsOnly() { // keep input focus while typing a layer key
   updateMeta();
 }
 
-function keyInput(value, onChange) {
+// kind: 'key' = one key, 'from' = key or combo, 'to' = key, combo, steps or @action, 'step' = combo or steps.
+function keyInput(value, onChange, kind = 'key') {
   const i = document.createElement('input');
-  i.value = value; i.setAttribute('list', 'keys'); i.autocomplete = 'off'; i.spellcheck = false;
-  const check = () => i.classList.toggle('invalid', !!i.value && validKeys.size > 0 && !validKeys.has(i.value.toLowerCase()));
+  const ok = { key: v => validKeys.has(v.toLowerCase()), from: validChord, to: validTarget, step: validSteps }[kind];
+  i.value = value; i.setAttribute('list', kind === 'to' ? 'targets' : 'keys'); i.autocomplete = 'off'; i.spellcheck = false;
+  const check = () => i.classList.toggle('invalid', !!i.value.trim() && validKeys.size > 0 && !ok(i.value.trim()));
   i.oninput = () => { onChange(i.value.trim()); check(); updateMeta(); };
   check();
   return i;
@@ -253,10 +358,22 @@ function keyInput(value, onChange) {
 
 function problems() {
   const out = [];
-  const bad = k => !k || (validKeys.size && !validKeys.has(k.toLowerCase()));
-  const scan = (label, list) => list.forEach(([a, b]) => { if (a || b) { if (bad(a)) out.push(`${label}: unknown key "${a}"`); if (bad(b)) out.push(`${label}: unknown key "${b}"`); } });
+  const known = validKeys.size > 0;
+  const scan = (label, list) => list.forEach(([a, b]) => {
+    if (!a && !b) return;
+    if (known && !validChord(a)) out.push(`${label}: unknown key "${a}"`);
+    if (known && !validTarget(b)) out.push(`${label}: unknown key or action "${b}"`);
+  });
   scan('Base', state.base);
-  state.layers.forEach(l => { if (bad(l.trigger)) out.push(`Layer: unknown key "${l.trigger}"`); scan(`Layer ${l.trigger}`, l.maps); });
+  state.layers.forEach(l => { if (known && !validKeys.has(l.trigger.toLowerCase())) out.push(`Layer: unknown key "${l.trigger}"`); scan(`Layer ${l.trigger}`, l.maps); });
+  const seen = new Set();
+  state.actions.forEach(a => {
+    if (!ACTION_NAME.test(a.name)) out.push(`Action "${a.name}": use letters, digits, - and _`);
+    else if (seen.has(a.name)) out.push(`Action "${a.name}" is defined twice`);
+    seen.add(a.name);
+    if (!a.steps.some(Boolean)) out.push(`Action "${a.name}" has no steps`);
+    a.steps.forEach(st => { if (st && known && !validSteps(st)) out.push(`Action "${a.name}": bad step "${st}"`); });
+  });
   return out;
 }
 
@@ -325,6 +442,7 @@ async function load() {
   const keys = await fetch('/api/keys').then(r => r.text());
   const names = keys.split('\n').filter(Boolean);
   validKeys = new Set(names.map(n => n.toLowerCase()));
+  allKeyNames = names;
   $('keys').innerHTML = names.map(n => `<option value="${n}">`).join('');
   await refreshDevices();
   await loadConfig();

@@ -60,6 +60,31 @@ l = right
 [base]   # switch back to base mappings
 ```
 
+### Combos and actions
+
+`from` can be a combo (modifiers `ctrl`, `alt`, `shift`, `win` plus one key) and `to` can be a
+key, a combo, comma-separated steps, or `@action`. An action is a named list of steps, defined
+once and bound anywhere:
+
+```
+alt+q = @switch-window       # Alt+Q runs the action
+alt+w = ctrl+shift+tab       # or a combo directly
+
+[action switch-window]
+alt+tab
+
+[action copy-paste]
+ctrl+c, ctrl+v               # steps run in order
+```
+
+- A combo fires only when exactly those modifiers are held, and the trigger key is swallowed.
+- If a step wants a modifier you are already holding (Alt for `alt+tab`), it is left held, so
+  the Windows switcher stays open while you keep Alt down. Other held modifiers are released
+  for the step and put back afterwards.
+- A `from = to` line after an action block ends that block. Actions work in base, layers and
+  per-keyboard files. The GUI has an **Actions** tab, and the keyboard picture has
+  Ctrl/Alt/Shift/Win checkboxes for binding combos.
+
 Key names are lowercase: letters, digits, `f1`-`f24`, `esc`, `tab`, `capslock`, `space`,
 `enter`, `backspace`, `lshift`/`rshift`, `lctrl`/`rctrl`, `lalt`/`ralt`, `lwin`/`rwin`,
 arrows, `home`/`end`/`pageup`/`pagedown`, `insert`/`delete`, punctuation, and so on. The GUI
@@ -76,6 +101,13 @@ Limits:
 - Two identical keyboards (same VID/PID) share one config.
 - If two keyboards press the same key at nearly the same instant, one may be misattributed.
 - Layer keys are tracked per keyboard.
+
+## Tests
+
+```
+cmake --build build --config Release --target keymapper_tests
+build\Release\keymapper_tests.exe
+```
 
 ## Layout
 

@@ -9,6 +9,7 @@ add_executable(keymapper
     src/key_names.cpp
     src/config_loader.cpp
     src/hook.cpp
+    src/matcher.cpp
     src/server.cpp
 )
 target_include_directories(keymapper PRIVATE src)
