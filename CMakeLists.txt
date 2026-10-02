@@ -24,3 +24,15 @@ add_custom_command(TARGET keymapper POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${CMAKE_SOURCE_DIR}/config/mappings.txt
             $<TARGET_FILE_DIR:keymapper>/mappings.default.txt)
+
+# Unit tests: build/Release/keymapper_tests.exe (also runnable via `ctest -C Release`).
+enable_testing()
+add_executable(keymapper_tests
+    tests/tests.cpp
+    src/key_names.cpp
+    src/config_loader.cpp
+    src/matcher.cpp
+)
+target_include_directories(keymapper_tests PRIVATE src)
+target_compile_definitions(keymapper_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+add_test(NAME keymapper_tests COMMAND keymapper_tests)
