@@ -102,6 +102,13 @@ in your own config wins. The GUI lists them, with descriptions, on the Actions t
 "becomes" list. Actions are chosen from these lists, not created in the GUI; to define your
 own, write an `[action ...]` block in the config file.
 
+Media actions (`volume-up`, `volume-down`, `mute`, `play-pause`, `next-track`, `previous-track`,
+`stop-media`, `browser-back`/`-forward`/`-refresh`/`-home`, `launch-mail`) send the same keys as a
+keyboard's media keys and have no default shortcut. Use them to put a media function on a combo of
+your choice, for example `alt+up = @volume-up`. They can't send a key your keyboard reports
+only as a vendor-specific report, and screen brightness has no key that Windows accepts, so
+there is no brightness action.
+
 Key names are lowercase: letters, digits, `f1`-`f24`, `esc`, `tab`, `capslock`, `space`,
 `enter`, `backspace`, `lshift`/`rshift`, `lctrl`/`rctrl`, `lalt`/`ralt`, `lwin`/`rwin`,
 arrows, `home`/`end`/`pageup`/`pagedown`, `insert`/`delete`, punctuation, and so on. The GUI

@@ -64,6 +64,58 @@ ctrl+win+left
 description: Create a new virtual desktop
 ctrl+win+d
 
+# --- Media and browser keys ---
+# These send the same keys as a keyboard's media keys, so a combo of yours can stand in for a media
+# key your keyboard doesn't report to Windows. None has a default shortcut.
+
+[action volume-up]
+description: Raise the volume
+volumeup
+
+[action volume-down]
+description: Lower the volume
+volumedown
+
+[action mute]
+description: Mute or unmute
+mute
+
+[action play-pause]
+description: Play or pause the current media
+playpause
+
+[action next-track]
+description: Next track
+nexttrack
+
+[action previous-track]
+description: Previous track
+previoustrack
+
+[action stop-media]
+description: Stop media playback
+mediastop
+
+[action browser-back]
+description: Browser back
+browserback
+
+[action browser-forward]
+description: Browser forward
+browserforward
+
+[action browser-refresh]
+description: Refresh the page
+browserrefresh
+
+[action browser-home]
+description: Open the browser home page
+browserhome
+
+[action launch-mail]
+description: Open the default mail app
+launchmail
+
 # --- Launch ---
 
 [action file-explorer]
