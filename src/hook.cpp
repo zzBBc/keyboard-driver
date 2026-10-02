@@ -1,5 +1,6 @@
 #include "hook.h"
 
+#include "engine.h"
 #include "keycodes.h"
 #include "matcher.h"
 
@@ -7,13 +8,10 @@
 #include <hidsdi.h>
 
 #include <algorithm>
-#include <atomic>
 #include <deque>
 #include <iostream>
-#include <map>
 #include <mutex>
 #include <unordered_map>
-#include <unordered_set>
 
 // The core uses portable key ids (keycodes.h) whose values equal the Windows virtual-key codes, so the
 // hook passes them straight through. These guard that assumption.
@@ -91,14 +89,7 @@ struct RawEvent {
 constexpr size_t kMaxPending = 64;
 constexpr DWORD kPendingTtlMs = 500;
 
-struct Profiles {
-    std::shared_ptr<const Config> def = std::make_shared<const Config>();
-    std::map<std::string, std::shared_ptr<const Config>> devices;
-};
-
-std::shared_ptr<const Profiles> g_profiles = std::make_shared<const Profiles>();
-std::mutex g_profilesMutex;  // serialises writers; readers just atomic_load
-
+Engine g_engine;  // the platform-independent decisions; this file only reports events and injects keys
 HHOOK g_hook = nullptr;
 HWND g_rawWindow = nullptr;
 DWORD g_mainThread = 0;
@@ -107,13 +98,6 @@ std::mutex g_lastMutex;
 std::string g_lastDevice;
 
 // Hook-thread-only state.
-struct DeviceState {
-    std::unordered_set<unsigned short> heldTriggers;          // layer keys currently down
-    // physical key -> key we sent for it (0 = swallowed, e.g. it ran a chord binding)
-    std::unordered_map<unsigned short, unsigned short> down;
-    std::vector<unsigned short> heldMods;  // modifier keys physically down
-};
-std::map<std::string, DeviceState> g_state;
 std::deque<RawEvent> g_pending;
 std::unordered_map<HANDLE, std::string> g_handleIds;  // raw input device handle -> hardware id
 
@@ -177,32 +161,6 @@ void sendKey(WORD vk, bool keyUp) {
     SendInput(1, &in, sizeof(INPUT));
 }
 
-bool isTrigger(const Config& cfg, unsigned short vk) {
-    for (const auto& layer : cfg.layers)
-        if (layer.trigger == vk) return true;
-    return false;
-}
-
-// Active layers first (in config order), then the base map.
-const unsigned short* resolve(const Config& cfg, const DeviceState& st, unsigned short vk) {
-    for (const auto& layer : cfg.layers) {
-        if (!st.heldTriggers.count(layer.trigger)) continue;
-        if (auto it = layer.map.find(vk); it != layer.map.end()) return &it->second;
-    }
-    if (auto it = cfg.base.map.find(vk); it != cfg.base.map.end()) return &it->second;
-    return nullptr;
-}
-
-// Binding for this chord: active layers first (in config order), then the base.
-const Binding* resolveChord(const Config& cfg, const DeviceState& st, unsigned short vk) {
-    const unsigned mods = modsOf(st.heldMods);
-    for (const auto& layer : cfg.layers) {
-        if (!st.heldTriggers.count(layer.trigger)) continue;
-        if (const Binding* b = findBinding(layer.chords, mods, vk)) return b;
-    }
-    return findBinding(cfg.base.chords, mods, vk);
-}
-
 // Which keyboard produced this hook event? Falls back to the last known one if Raw Input
 // hasn't reported it (yet).
 std::string attribute(const KBDLLHOOKSTRUCT& kb, bool up) {
@@ -227,60 +185,13 @@ LRESULT CALLBACK lowLevelKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
     const auto* kb = reinterpret_cast<const KBDLLHOOKSTRUCT*>(lParam);
     if (kb->dwExtraInfo == kInjectedTag) return CallNextHookEx(g_hook, code, wParam, lParam);
 
-    const auto profiles = std::atomic_load(&g_profiles);
     const auto vk = static_cast<unsigned short>(kb->vkCode);
     const bool up = (wParam == WM_KEYUP || wParam == WM_SYSKEYUP);
 
-    const std::string dev = attribute(*kb, up);
-    DeviceState& st = g_state[dev];
-
-    if (modBit(vk)) {  // track physical modifiers for chord bindings
-        auto& mods = st.heldMods;
-        auto it = std::find(mods.begin(), mods.end(), vk);
-        if (up && it != mods.end()) mods.erase(it);
-        else if (!up && it == mods.end()) mods.push_back(vk);
-    }
-    const Config& cfg = *(profiles->devices.count(dev) ? profiles->devices.at(dev) : profiles->def);
-
-    if (up) {
-        // Checked even if the config changed meanwhile, so nothing gets stuck. If attribution
-        // was wrong, the key may be held under another keyboard, so look there too.
-        auto release = [&](DeviceState& s) {
-            if (s.heldTriggers.erase(vk)) return true;
-            if (auto it = s.down.find(vk); it != s.down.end()) {
-                if (it->second) sendKey(it->second, true);  // release what we pressed, even if the layer is gone
-                s.down.erase(it);
-                return true;
-            }
-            return false;
-        };
-        if (release(st)) return 1;
-        for (auto& [id, other] : g_state)
-            if (&other != &st && release(other)) return 1;
-        return CallNextHookEx(g_hook, code, wParam, lParam);
-    }
-
-    if (isTrigger(cfg, vk)) {  // also swallows auto-repeat
-        st.heldTriggers.insert(vk);
-        return 1;
-    }
-    if (auto it = st.down.find(vk); it != st.down.end()) {  // auto-repeat of a remapped key
-        if (it->second) sendKey(it->second, false);
-        return 1;
-    }
-    if (!modBit(vk)) {
-        if (const Binding* b = resolveChord(cfg, st, vk)) {
-            for (const KeyEvent& e : expand(b->out, st.heldMods)) sendKey(e.vk, e.up);
-            st.down[vk] = 0;  // swallow the trigger key's release (and auto-repeat) too
-            return 1;
-        }
-    }
-    if (const unsigned short* to = resolve(cfg, st, vk)) {
-        st.down[vk] = *to;
-        sendKey(*to, false);
-        return 1;
-    }
-    return CallNextHookEx(g_hook, code, wParam, lParam);
+    std::vector<KeyEvent> send;
+    const bool swallow = g_engine.handle(attribute(*kb, up), vk, up, send);
+    for (const KeyEvent& e : send) sendKey(e.key, e.up);
+    return swallow ? 1 : CallNextHookEx(g_hook, code, wParam, lParam);
 }
 
 LRESULT CALLBACK rawWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -341,16 +252,7 @@ BOOL WINAPI quitHandler(DWORD type) {
 }  // namespace
 
 void setConfig(const std::string& deviceId, std::shared_ptr<const Config> cfg) {
-    std::lock_guard<std::mutex> lock(g_profilesMutex);
-    auto next = std::make_shared<Profiles>(*std::atomic_load(&g_profiles));
-    if (deviceId.empty()) {
-        if (cfg) next->def = std::move(cfg);
-    } else if (cfg) {
-        next->devices[deviceId] = std::move(cfg);
-    } else {
-        next->devices.erase(deviceId);
-    }
-    std::atomic_store(&g_profiles, std::shared_ptr<const Profiles>(std::move(next)));
+    g_engine.setConfig(deviceId, std::move(cfg));
 }
 
 std::vector<KeyboardInfo> listKeyboards() {

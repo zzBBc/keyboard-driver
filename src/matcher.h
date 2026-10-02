@@ -6,7 +6,7 @@
 // Pure key-matching and expansion logic, kept apart from the Windows hook so it can be tested.
 
 struct KeyEvent {
-    unsigned short vk;
+    unsigned short key;
     bool up;
 };
 
