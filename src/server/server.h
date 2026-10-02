@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -8,6 +9,7 @@
 struct ServerOptions {
     int port = 8765;
     Engine* engine = nullptr;  // receives saved configs
+    std::function<void()> onQuit;  // called after POST /api/quit has been answered
     std::string webDir;      // folder containing index.html
     std::string configPath;  // default config, read/written by the GUI
     std::shared_ptr<const Config> library;  // built-in actions (config/actions.txt)

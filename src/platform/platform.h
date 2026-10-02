@@ -22,6 +22,15 @@ std::vector<KeyboardInfo> listKeyboards();
 // Hardware id of the keyboard that produced the most recent key press ("" if none yet).
 std::string lastKeyboard();
 
+// Makes sure only one copy of the program runs. If another copy is already running, asks it to quit and
+// waits (a few seconds) for it to go, so this copy can take over its port and keyboard hook. Returns
+// false if the other copy did not go away. Call this first thing at start-up.
+bool takeOverFromRunningInstance();
+
+// Ask the running keyboard hook to stop, so runHook() returns. Safe to call from any thread, and
+// before runHook() has started (then it returns as soon as it starts).
+void requestQuit();
+
 // Start intercepting keyboard input: report each physical key event to `engine` (with the keyboard it
 // came from) and inject the key events it asks for. Blocks until the program should exit (Ctrl+C) and
 // returns the exit code. Injected events must never be reported back to the engine.

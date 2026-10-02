@@ -1,7 +1,9 @@
+#include <chrono>
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <memory>
+#include <thread>
 
 #include "config_loader.h"
 #include "engine.h"
@@ -9,6 +11,9 @@
 #include "server.h"
 
 int main(int argc, char** argv) {
+    // A second launch replaces the running copy (stops it, then takes over its port and hook).
+    if (!platform::takeOverFromRunningInstance()) return 1;
+
     const std::string dir = platform::exeDir();
     Engine engine;
 
@@ -24,6 +29,12 @@ int main(int argc, char** argv) {
 
     ServerOptions opts;
     opts.engine = &engine;
+    opts.onQuit = [] {  // the GUI's Stop button: let the reply go out, then stop the hook
+        std::thread([] {
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            platform::requestQuit();
+        }).detach();
+    };
     opts.library = library;
     opts.webDir = (std::filesystem::path(dir) / "web").string();
     opts.devicesDir = (std::filesystem::path(dir) / "devices").string();

@@ -117,6 +117,13 @@ $('reset').onclick = async () => {
 };
 setInterval(() => { if (document.activeElement !== $('device')) refreshDevices().catch(() => {}); }, 3000);
 
+$('stop').onclick = async () => {
+  if (!confirm('Stop Keymapper? Remapping stops until you start it again.')) return;
+  try { await fetch('/api/quit', { method: 'POST', headers: HDR }); } catch (e) { /* it may close the connection as it exits */ }
+  saved = serialize(state);  // nothing left to lose: no "leave page?" prompt
+  document.querySelectorAll('button, select, input').forEach(el => { el.disabled = true; });
+  setStatus('Keymapper has stopped. You can close this tab.', 'err');
+};
 $('save').onclick = () => save().catch(e => setStatus('Save failed: ' + e.message, 'err'));
 $('revert').onclick = () => { state = parse(saved); current = 'base'; render(); };
 window.addEventListener('beforeunload', e => { if (serialize(state) !== saved) e.preventDefault(); });

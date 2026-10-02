@@ -228,6 +228,14 @@ void handle(socket_t s, const ServerOptions& opts) {
             }
         return respond(s, 200, "OK", "text/plain; charset=utf-8", out);
     }
+    if (req.method == "POST" && target.path == "/api/quit") {  // the GUI's Stop button
+        // Same rule as saving: a custom header can't be sent cross-site without a CORS preflight.
+        if (req.headers["x-requested-with"] != "keymapper")
+            return respond(s, 403, "Forbidden", "text/plain", "missing header");
+        respond(s, 200, "OK", "text/plain", "stopping");
+        if (opts.onQuit) opts.onQuit();
+        return;
+    }
     if (req.method == "GET" && req.path == "/api/devices") {
         std::string out = "last\t" + platform::lastKeyboard() + "\n";
         for (const auto& k : platform::listKeyboards()) {

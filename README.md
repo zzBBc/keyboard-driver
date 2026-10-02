@@ -21,9 +21,12 @@ The build copies `web/`, the built-in actions (`actions.txt`) and the default co
 build\Release\keymapper.exe [config-path] [port]
 ```
 
-Then open http://127.0.0.1:8765 (the default port). Press Ctrl+C to quit (or
-`taskkill /IM keymapper.exe`). A global keyboard hook is active while it runs, so remaps apply to
-every program.
+Then open http://127.0.0.1:8765 (the default port). A global keyboard hook is active while it runs,
+so remaps apply to every program.
+
+To stop it, click **Stop app** in the GUI's bottom bar (or press Ctrl+C in its console window, or
+`taskkill /IM keymapper.exe`). Only one copy runs at a time: starting `keymapper.exe` again stops the
+running copy and takes over its port and hook.
 
 The GUI server only listens on localhost and rejects requests from other sites.
 

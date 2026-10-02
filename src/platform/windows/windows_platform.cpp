@@ -8,6 +8,8 @@
 #include <hidsdi.h>
 
 #include <algorithm>
+#include <atomic>
+#include <thread>
 #include <deque>
 #include <iostream>
 #include <mutex>
@@ -93,6 +95,7 @@ Engine* g_engine = nullptr;  // the platform-independent decisions; this file on
 HHOOK g_hook = nullptr;
 HWND g_rawWindow = nullptr;
 DWORD g_mainThread = 0;
+std::atomic<bool> g_quitRequested{false};
 
 std::mutex g_lastMutex;
 std::string g_lastDevice;
@@ -243,7 +246,7 @@ bool createRawInputWindow() {
 // Console control handlers run on a separate thread, so post WM_QUIT to the hook thread.
 BOOL WINAPI quitHandler(DWORD type) {
     if (type == CTRL_C_EVENT || type == CTRL_CLOSE_EVENT) {
-        PostThreadMessageW(g_mainThread, WM_QUIT, 0, 0);
+        platform::requestQuit();
         return TRUE;
     }
     return FALSE;
@@ -293,6 +296,40 @@ std::string lastKeyboard() {
     return g_lastDevice;
 }
 
+void requestQuit() {
+    g_quitRequested = true;
+    if (g_mainThread) PostThreadMessageW(g_mainThread, WM_QUIT, 0, 0);
+}
+
+// One copy per Windows session. The mutex says "a copy is running"; the event is how a newer copy asks it
+// to quit. The GUID keeps the names unique to this program.
+bool takeOverFromRunningInstance() {
+    static constexpr wchar_t kMutexName[] = L"Local\\Keymapper-06E96121-153E-42F7-8211-44CFD182948D";
+    static constexpr wchar_t kQuitEventName[] = L"Local\\Keymapper-06E96121-153E-42F7-8211-44CFD182948D-quit";
+
+    HANDLE quitEvent = CreateEventW(nullptr, TRUE, FALSE, kQuitEventName);  // manual reset
+    HANDLE mutex = CreateMutexW(nullptr, TRUE, kMutexName);                 // we own it if we created it
+    const bool alreadyRunning = GetLastError() == ERROR_ALREADY_EXISTS;
+    if (!quitEvent || !mutex) return true;  // can't tell: carry on without the protection
+
+    if (alreadyRunning) {
+        std::cout << "Keymapper is already running: stopping it and taking over...\n";
+        SetEvent(quitEvent);
+        const DWORD r = WaitForSingleObject(mutex, 8000);  // released (or abandoned) when the old copy exits
+        if (r != WAIT_OBJECT_0 && r != WAIT_ABANDONED) {
+            std::cerr << "The running copy did not stop in time.\n";
+            return false;
+        }
+        ResetEvent(quitEvent);
+    }
+    // From now on, a newer copy can ask this one to quit.
+    std::thread([quitEvent] {
+        WaitForSingleObject(quitEvent, INFINITE);
+        requestQuit();
+    }).detach();
+    return true;
+}
+
 int runHook(Engine& engine) {
     g_engine = &engine;
     g_mainThread = GetCurrentThreadId();
@@ -306,6 +343,7 @@ int runHook(Engine& engine) {
         return 1;
     }
     SetConsoleCtrlHandler(quitHandler, TRUE);
+    if (g_quitRequested) PostQuitMessage(0);  // asked to quit before the loop existed
 
     MSG msg;
     while (GetMessageW(&msg, nullptr, 0, 0) > 0) {
