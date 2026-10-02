@@ -1,12 +1,11 @@
 // Minimal test runner (no external dependencies): run keymapper_tests.exe, exit code 0 = pass.
-#include <windows.h>
-
 #include <iostream>
 #include <string>
 #include <vector>
 
 #include "config_loader.h"
 #include "key_names.h"
+#include "keycodes.h"
 #include "matcher.h"
 #include "static_files.h"
 
@@ -62,7 +61,7 @@ void altQRunsSwitchWindowAction() {
     const Steps& steps = p.cfg.actions["switch-window"];
     CHECK(steps.size() == 1);
     CHECK(steps[0].mods == ModAlt);
-    CHECK(steps[0].key == VK_TAB);
+    CHECK(steps[0].key == key::Tab);
 
     // The binding lives in the base chords (not the plain key map) and carries the action's steps.
     CHECK(p.cfg.base.map.empty());
@@ -70,7 +69,7 @@ void altQRunsSwitchWindowAction() {
     const Binding& b = p.cfg.base.chords[0];
     CHECK(b.from.mods == ModAlt);
     CHECK(b.from.key == 'Q');
-    CHECK(b.out.size() == 1 && b.out[0].mods == ModAlt && b.out[0].key == VK_TAB);
+    CHECK(b.out.size() == 1 && b.out[0].mods == ModAlt && b.out[0].key == key::Tab);
 }
 
 void altQBindingMatchesOnlyExactChord() {
@@ -91,30 +90,30 @@ void altQSendsTabWhileAltStaysHeld() {
 
     // Alt is physically held (that's how Alt+Q was pressed), so only Tab is tapped:
     // the Windows switcher stays open for as long as the user keeps Alt down.
-    CHECK(same(expand(b->out, {VK_LMENU}), {{VK_TAB, false}, {VK_TAB, true}}));
+    CHECK(same(expand(b->out, {key::LAlt}), {{key::Tab, false}, {key::Tab, true}}));
     // Right Alt works the same.
-    CHECK(same(expand(b->out, {VK_RMENU}), {{VK_TAB, false}, {VK_TAB, true}}));
+    CHECK(same(expand(b->out, {key::RAlt}), {{key::Tab, false}, {key::Tab, true}}));
 }
 
 // ---- expansion of other shapes ----
 
 void expandPressesMissingModifiers() {
-    Steps s = {{ModAlt, VK_TAB}};
-    CHECK(same(expand(s, {}), {{VK_LMENU, false}, {VK_TAB, false}, {VK_TAB, true}, {VK_LMENU, true}}));
+    Steps s = {{ModAlt, key::Tab}};
+    CHECK(same(expand(s, {}), {{key::LAlt, false}, {key::Tab, false}, {key::Tab, true}, {key::LAlt, true}}));
 }
 
 void expandSwapsOutPhysicalModifiers() {
     // Output wants Ctrl+C but the user is physically holding Alt: release Alt, send, restore Alt.
     Steps s = {{ModCtrl, 'C'}};
-    CHECK(same(expand(s, {VK_LMENU}),
-               {{VK_LMENU, true}, {VK_LCONTROL, false}, {'C', false}, {'C', true}, {VK_LCONTROL, true}, {VK_LMENU, false}}));
+    CHECK(same(expand(s, {key::LAlt}),
+               {{key::LAlt, true}, {key::LControl, false}, {'C', false}, {'C', true}, {key::LControl, true}, {key::LAlt, false}}));
 }
 
 void expandRunsStepsInOrder() {
     Steps s = {{ModCtrl, 'C'}, {ModCtrl, 'V'}};
     CHECK(same(expand(s, {}),
-               {{VK_LCONTROL, false}, {'C', false}, {'C', true}, {VK_LCONTROL, true},
-                {VK_LCONTROL, false}, {'V', false}, {'V', true}, {VK_LCONTROL, true}}));
+               {{key::LControl, false}, {'C', false}, {'C', true}, {key::LControl, true},
+                {key::LControl, false}, {'V', false}, {'V', true}, {key::LControl, true}}));
 }
 
 // ---- parser ----
@@ -172,11 +171,11 @@ void badChordIsAnError() {
 }
 
 void modifierKeyDetection() {
-    CHECK(modBit(VK_LMENU) == ModAlt);
-    CHECK(modBit(VK_RMENU) == ModAlt);
-    CHECK(modBit(VK_LCONTROL) == ModCtrl);
-    CHECK(modBit(VK_RSHIFT) == ModShift);
-    CHECK(modBit(VK_LWIN) == ModWin);
+    CHECK(modBit(key::LAlt) == ModAlt);
+    CHECK(modBit(key::RAlt) == ModAlt);
+    CHECK(modBit(key::LControl) == ModCtrl);
+    CHECK(modBit(key::RShift) == ModShift);
+    CHECK(modBit(key::LWin) == ModWin);
     CHECK(modBit('Q') == 0);
 }
 
@@ -197,7 +196,7 @@ void libraryActionIsUsedWhenNotDefined() {
     std::vector<std::string> errors;
     CHECK(parseConfig("alt+q = @switch-window\n", cfg, errors, &lib.cfg));
     CHECK(cfg.base.chords.size() == 1);
-    CHECK(cfg.base.chords.size() == 1 && cfg.base.chords[0].out.size() == 1 && cfg.base.chords[0].out[0].key == VK_TAB);
+    CHECK(cfg.base.chords.size() == 1 && cfg.base.chords[0].out.size() == 1 && cfg.base.chords[0].out[0].key == key::Tab);
 
     Config alone;
     std::vector<std::string> errors2;
@@ -214,12 +213,12 @@ void userActionOverridesLibrary() {
 }
 
 void keyNameFromVk() {
-    CHECK(nameFromVk(VK_TAB) == "tab");
-    CHECK(nameFromVk(VK_ESCAPE) == "esc");  // shortest of esc/escape
-    CHECK(nameFromVk(VK_RETURN) == "enter");
-    CHECK(nameFromVk(VK_OEM_PERIOD) == ".");
+    CHECK(nameFromVk(key::Tab) == "tab");
+    CHECK(nameFromVk(key::Escape) == "esc");  // shortest of esc/escape
+    CHECK(nameFromVk(key::Enter) == "enter");
+    CHECK(nameFromVk(key::Period) == ".");
     CHECK(nameFromVk('Q') == "q");
-    CHECK(nameFromVk(VK_F4) == "f4");
+    CHECK(nameFromVk(key::F4) == "f4");
     CHECK(nameFromVk(0x07).empty());  // undefined key
 }
 
@@ -268,7 +267,7 @@ void defaultShortcutIsBoundWithoutAnyUserConfig() {
     CHECK(p.cfg.base.chords.size() == 1);
     const Binding* b = findBinding(p.cfg.base.chords, ModAlt, 'Q');
     CHECK(b != nullptr);
-    CHECK(b != nullptr && b->out.size() == 1 && b->out[0].mods == ModAlt && b->out[0].key == VK_TAB);
+    CHECK(b != nullptr && b->out.size() == 1 && b->out[0].mods == ModAlt && b->out[0].key == key::Tab);
 }
 
 void noLibraryMeansNoDefaults() {
@@ -346,34 +345,34 @@ void userRedefinedActionKeepsItsDefaultShortcut() {
 // ---- media keys ----
 
 void mediaKeyNames() {
-    CHECK(vkFromName("volumeup").value_or(0) == VK_VOLUME_UP);
-    CHECK(vkFromName("volumedown").value_or(0) == VK_VOLUME_DOWN);
-    CHECK(vkFromName("mute").value_or(0) == VK_VOLUME_MUTE);
-    CHECK(vkFromName("playpause").value_or(0) == VK_MEDIA_PLAY_PAUSE);
-    CHECK(vkFromName("nexttrack").value_or(0) == VK_MEDIA_NEXT_TRACK);
-    CHECK(vkFromName("previoustrack").value_or(0) == VK_MEDIA_PREV_TRACK);
-    CHECK(vkFromName("browserback").value_or(0) == VK_BROWSER_BACK);
-    CHECK(nameFromVk(VK_VOLUME_UP) == "volumeup");  // reverse lookup works for them too
+    CHECK(vkFromName("volumeup").value_or(0) == key::VolumeUp);
+    CHECK(vkFromName("volumedown").value_or(0) == key::VolumeDown);
+    CHECK(vkFromName("mute").value_or(0) == key::VolumeMute);
+    CHECK(vkFromName("playpause").value_or(0) == key::MediaPlayPause);
+    CHECK(vkFromName("nexttrack").value_or(0) == key::MediaNext);
+    CHECK(vkFromName("previoustrack").value_or(0) == key::MediaPrevious);
+    CHECK(vkFromName("browserback").value_or(0) == key::BrowserBack);
+    CHECK(nameFromVk(key::VolumeUp) == "volumeup");  // reverse lookup works for them too
 }
 
 void mediaKeyActionIsBindable() {
     auto lib = parse("[action volume-up]\ndescription: Raise the volume\nvolumeup\n");
     CHECK(lib.ok);
-    CHECK(lib.cfg.actions["volume-up"].size() == 1 && lib.cfg.actions["volume-up"][0].key == VK_VOLUME_UP);
+    CHECK(lib.cfg.actions["volume-up"].size() == 1 && lib.cfg.actions["volume-up"][0].key == key::VolumeUp);
     CHECK(lib.cfg.actionShortcuts.count("volume-up") == 0);  // no default combo
 
     Config cfg;
     std::vector<std::string> errors;
     CHECK(parseConfig("alt+up = @volume-up\n", cfg, errors, &lib.cfg));
-    const Binding* b = findBinding(cfg.base.chords, ModAlt, VK_UP);
-    CHECK(b != nullptr && b->out.size() == 1 && b->out[0].mods == 0 && b->out[0].key == VK_VOLUME_UP);
+    const Binding* b = findBinding(cfg.base.chords, ModAlt, key::Up);
+    CHECK(b != nullptr && b->out.size() == 1 && b->out[0].mods == 0 && b->out[0].key == key::VolumeUp);
     CHECK(cfg.base.chords.size() == 1);  // and nothing else got bound by default
 }
 
 void mediaKeyWorksInComboOutput() {
     auto p = parse("alt+down = volumedown\n");  // a media key as the plain target of a combo
     CHECK(p.ok);
-    CHECK(p.cfg.base.chords.size() == 1 && p.cfg.base.chords[0].out[0].key == VK_VOLUME_DOWN);
+    CHECK(p.cfg.base.chords.size() == 1 && p.cfg.base.chords[0].out[0].key == key::VolumeDown);
 }
 
 // ---- action categories ----
