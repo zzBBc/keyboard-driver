@@ -126,6 +126,20 @@ std::string queryParam(const std::string& query, const std::string& name) {
     return "";
 }
 
+// Steps back as config text, e.g. "ctrl+c, ctrl+v".
+std::string stepsToText(const Steps& steps) {
+    std::string out;
+    for (const auto& step : steps) {
+        if (!out.empty()) out += ", ";
+        if (step.mods & ModCtrl) out += "ctrl+";
+        if (step.mods & ModAlt) out += "alt+";
+        if (step.mods & ModShift) out += "shift+";
+        if (step.mods & ModWin) out += "win+";
+        out += nameFromVk(step.key);
+    }
+    return out;
+}
+
 std::string deviceConfigPath(const ServerOptions& opts, const std::string& id) {
     return opts.devicesDir + "\\" + id + ".txt";
 }
@@ -157,6 +171,17 @@ void handle(SOCKET s, const ServerOptions& opts) {
     if (req.method == "GET" && req.path == "/api/keys") {
         std::string out;
         for (const auto& n : allKeyNames()) out += n + "\n";
+        return respond(s, 200, "OK", "text/plain; charset=utf-8", out);
+    }
+    if (req.method == "GET" && req.path == "/api/actions") {
+        // Built-in actions, one per line: name <TAB> description <TAB> steps ("ctrl+c, ctrl+v").
+        std::string out;
+        if (opts.library)
+            for (const auto& [name, steps] : opts.library->actions) {
+                std::string desc;
+                if (auto it = opts.library->actionInfo.find(name); it != opts.library->actionInfo.end()) desc = it->second;
+                out += name + "\t" + desc + "\t" + stepsToText(steps) + "\n";
+            }
         return respond(s, 200, "OK", "text/plain; charset=utf-8", out);
     }
     if (req.method == "GET" && req.path == "/api/devices") {
@@ -193,7 +218,7 @@ void handle(SOCKET s, const ServerOptions& opts) {
         if (req.method == "PUT") {
             auto cfg = std::make_shared<Config>();
             std::vector<std::string> errors;
-            if (!parseConfig(req.body, *cfg, errors)) {
+            if (!parseConfig(req.body, *cfg, errors, opts.library.get())) {
                 std::string msg;
                 for (const auto& e : errors) msg += e + "\n";
                 return respond(s, 400, "Bad Request", "text/plain; charset=utf-8", msg);

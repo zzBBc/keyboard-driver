@@ -1,0 +1,143 @@
+# Built-in actions. Shipped next to the exe and shown in the GUI; do not edit the copy next to
+# the exe (it is replaced on every build). Bind one with "alt+q = @name" in any config, or
+# define an action of the same name in your own config to override it.
+#
+# [action name]
+# description: what it does
+# step, step        (each step is a key or combo; steps run in order)
+
+# --- Windows and desktops ---
+
+[action switch-window]
+description: Switch to the next window (hold Alt to keep cycling)
+alt+tab
+
+[action previous-window]
+description: Switch to the previous window
+alt+shift+tab
+
+[action task-view]
+description: Open Task View with all windows and desktops
+win+tab
+
+[action close-window]
+description: Close the active window
+alt+f4
+
+[action show-desktop]
+description: Show or hide the desktop
+win+d
+
+[action lock-screen]
+description: Lock the computer
+win+l
+
+[action task-manager]
+description: Open Task Manager
+ctrl+shift+esc
+
+[action snap-left]
+description: Snap the window to the left half
+win+left
+
+[action snap-right]
+description: Snap the window to the right half
+win+right
+
+[action maximize-window]
+description: Maximize the window
+win+up
+
+[action minimize-window]
+description: Minimize the window
+win+down
+
+[action next-desktop]
+description: Switch to the next virtual desktop
+ctrl+win+right
+
+[action previous-desktop]
+description: Switch to the previous virtual desktop
+ctrl+win+left
+
+[action new-desktop]
+description: Create a new virtual desktop
+ctrl+win+d
+
+# --- Launch ---
+
+[action file-explorer]
+description: Open File Explorer
+win+e
+
+[action run-dialog]
+description: Open the Run dialog
+win+r
+
+[action screenshot-region]
+description: Capture part of the screen (Snipping Tool)
+win+shift+s
+
+[action emoji-picker]
+description: Open the emoji picker
+win+.
+
+[action clipboard-history]
+description: Open the clipboard history
+win+v
+
+# --- Editing ---
+
+[action copy]
+description: Copy the selection
+ctrl+c
+
+[action cut]
+description: Cut the selection
+ctrl+x
+
+[action paste]
+description: Paste
+ctrl+v
+
+[action paste-plain]
+description: Paste without formatting
+ctrl+shift+v
+
+[action undo]
+description: Undo
+ctrl+z
+
+[action redo]
+description: Redo
+ctrl+y
+
+[action select-all]
+description: Select everything
+ctrl+a
+
+[action duplicate-selection]
+description: Copy the selection and paste it right after
+ctrl+c, ctrl+v
+
+# --- Tabs (browsers, editors) ---
+
+[action next-tab]
+description: Go to the next tab
+ctrl+tab
+
+[action previous-tab]
+description: Go to the previous tab
+ctrl+shift+tab
+
+[action new-tab]
+description: Open a new tab
+ctrl+t
+
+[action close-tab]
+description: Close the current tab
+ctrl+w
+
+[action reopen-tab]
+description: Reopen the last closed tab
+ctrl+shift+t

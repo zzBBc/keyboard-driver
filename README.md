@@ -81,9 +81,16 @@ ctrl+c, ctrl+v               # steps run in order
 - If a step wants a modifier you are already holding (Alt for `alt+tab`), it is left held, so
   the Windows switcher stays open while you keep Alt down. Other held modifiers are released
   for the step and put back afterwards.
+- Optional `description: text` as the first line of an action shows in the GUI.
 - A `from = to` line after an action block ends that block. Actions work in base, layers and
   per-keyboard files. The GUI has an **Actions** tab, and the keyboard picture has
   Ctrl/Alt/Shift/Win checkboxes for binding combos.
+
+**Built-in actions** (`config/actions.txt`, copied next to the exe on every build) are about 30
+common shortcuts such as `switch-window`, `close-window`, `show-desktop`, `copy`, `next-tab`.
+Use them directly (`alt+q = @switch-window`) without defining them. An action of the same name
+in your own config wins. The GUI lists them, with descriptions, on the Actions tab and in the
+action dropdowns, and can copy one into your config to edit.
 
 Key names are lowercase: letters, digits, `f1`-`f24`, `esc`, `tab`, `capslock`, `space`,
 `enter`, `backspace`, `lshift`/`rshift`, `lctrl`/`rctrl`, `lalt`/`ralt`, `lwin`/`rwin`,
@@ -114,4 +121,6 @@ build\Release\keymapper_tests.exe
 - `src/hook.cpp`: keyboard hook, Raw Input attribution, remapping
 - `src/server.cpp`: localhost HTTP server and API (`/api/config`, `/api/devices`, `/api/keys`)
 - `src/config_loader.cpp`, `src/key_names.cpp`: config parsing and key names
+- `src/matcher.cpp`: chord matching and key-event expansion (unit tested)
+- `config/actions.txt`: built-in actions library
 - `web/index.html`: the GUI

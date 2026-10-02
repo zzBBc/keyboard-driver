@@ -16,14 +16,17 @@ target_include_directories(keymapper PRIVATE src)
 target_compile_definitions(keymapper PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
 target_link_libraries(keymapper PRIVATE ws2_32 hid)
 
-# Next to the exe: the GUI page, and the default config used on first run.
+# Next to the exe: the GUI page, the built-in actions, and the default config used on first run.
 # (mappings.txt itself is never overwritten, since the GUI edits it.)
 add_custom_command(TARGET keymapper POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_SOURCE_DIR}/web $<TARGET_FILE_DIR:keymapper>/web
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${CMAKE_SOURCE_DIR}/config/mappings.txt
-            $<TARGET_FILE_DIR:keymapper>/mappings.default.txt)
+            $<TARGET_FILE_DIR:keymapper>/mappings.default.txt
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/config/actions.txt
+            $<TARGET_FILE_DIR:keymapper>/actions.txt)
 
 # Unit tests: build/Release/keymapper_tests.exe (also runnable via `ctest -C Release`).
 enable_testing()

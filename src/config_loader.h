@@ -37,17 +37,22 @@ struct Config {
     Scope base;
     std::vector<Layer> layers;                 // earlier layers win when several are held
     std::map<std::string, Steps> actions;      // named sequences, e.g. "switch-window" = Alt+Tab
+    std::map<std::string, std::string> actionInfo;  // action name -> description (optional)
 };
 
 // Parse config text:
 //   from = to            (base mapping, before any section header)
 //   [layer <key>]        (following mappings apply while <key> is held)
 //   [base]               (switch back to base mappings)
-//   [action <name>]      (following lines are the action's steps: "ctrl+c, ctrl+v")
+//   [action <name>]      (following lines are the action's steps: "ctrl+c, ctrl+v",
+//                         plus an optional "description: text" line)
 // `from` is a key or a chord ("alt+q"); `to` is a key, chord, comma-separated steps, or
 // "@action". Problems are appended to `errors` (with line numbers) and the line is skipped.
+// `library` (optional) supplies built-in actions: a binding may use one that the config itself
+// doesn't define, and an action defined in the config wins over a library action of that name.
 // Returns true if there were no errors.
-bool parseConfig(const std::string& text, Config& out, std::vector<std::string>& errors);
+bool parseConfig(const std::string& text, Config& out, std::vector<std::string>& errors,
+                 const Config* library = nullptr);
 
 bool readFile(const std::string& path, std::string& out);
 bool writeFile(const std::string& path, const std::string& content);

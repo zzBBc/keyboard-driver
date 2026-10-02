@@ -1,10 +1,14 @@
 #pragma once
+#include <memory>
 #include <string>
+
+#include "config_loader.h"
 
 struct ServerOptions {
     int port = 8765;
     std::string webDir;      // folder containing index.html
     std::string configPath;  // default config, read/written by the GUI
+    std::shared_ptr<const Config> library;  // built-in actions (config/actions.txt)
     std::string devicesDir;  // per-keyboard configs: <devicesDir>\<hardware id>.txt
 };
 

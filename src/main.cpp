@@ -21,7 +21,18 @@ std::string exeDir() {
 int main(int argc, char** argv) {
     const std::string dir = exeDir();
 
+    // Built-in actions shipped next to the exe; configs may use them without defining them.
+    auto library = std::make_shared<Config>();
+    {
+        std::string libText;
+        std::vector<std::string> libErrors;
+        const std::string libPath = dir + "\\actions.txt";
+        if (readFile(libPath, libText) && !parseConfig(libText, *library, libErrors))
+            for (const auto& e : libErrors) std::cerr << libPath << ": " << e << "\n";
+    }
+
     ServerOptions opts;
+    opts.library = library;
     opts.webDir = dir + "\\web";
     opts.devicesDir = dir + "\\devices";
     opts.configPath = argc > 1 ? argv[1] : dir + "\\mappings.txt";
@@ -35,7 +46,7 @@ int main(int argc, char** argv) {
 
     auto cfg = std::make_shared<Config>();
     std::vector<std::string> errors;
-    if (!parseConfig(text, *cfg, errors))
+    if (!parseConfig(text, *cfg, errors, library.get()))
         for (const auto& e : errors) std::cerr << opts.configPath << ": " << e << "\n";
     setConfig("", cfg);
 
@@ -49,7 +60,7 @@ int main(int argc, char** argv) {
             auto devCfg = std::make_shared<Config>();
             std::vector<std::string> devErrors;
             if (!validDeviceId(id) || !readFile(path, devText)) continue;
-            if (!parseConfig(devText, *devCfg, devErrors))
+            if (!parseConfig(devText, *devCfg, devErrors, library.get()))
                 for (const auto& e : devErrors) std::cerr << path << ": " << e << "\n";
             setConfig(id, devCfg);
             std::cout << "Keyboard config: " << id << "\n";

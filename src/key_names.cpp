@@ -43,6 +43,15 @@ std::vector<std::string> allKeyNames() {
     return names;
 }
 
+std::string nameFromVk(unsigned short vk) {
+    std::string best;
+    for (const auto& kv : table()) {
+        if (kv.second != vk) continue;
+        if (best.empty() || kv.first.size() < best.size() || (kv.first.size() == best.size() && kv.first < best)) best = kv.first;
+    }
+    return best;
+}
+
 std::optional<unsigned short> vkFromName(const std::string& name) {
     std::string key = name;
     std::transform(key.begin(), key.end(), key.begin(),

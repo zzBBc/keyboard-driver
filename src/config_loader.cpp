@@ -85,7 +85,7 @@ struct Pending {
 
 }  // namespace
 
-bool parseConfig(const std::string& text, Config& out, std::vector<std::string>& errors) {
+bool parseConfig(const std::string& text, Config& out, std::vector<std::string>& errors, const Config* library) {
     out = Config{};
     const size_t errorsBefore = errors.size();
     auto fail = [&](int lineNo, const std::string& msg) {
@@ -97,6 +97,7 @@ bool parseConfig(const std::string& text, Config& out, std::vector<std::string>&
     Scope* scope = &out.base;
     int scopeLayer = -1;
     Steps* action = nullptr;
+    std::string actionName;
     std::vector<Pending> pending;
 
     std::istringstream in(text);
@@ -134,6 +135,7 @@ bool parseConfig(const std::string& text, Config& out, std::vector<std::string>&
                     mode = Mode::Skip;
                 } else {
                     mode = Mode::Action;
+                    actionName = name;
                     action = &out.actions[name];
                 }
                 continue;
@@ -153,6 +155,11 @@ bool parseConfig(const std::string& text, Config& out, std::vector<std::string>&
         };
 
         if (mode == Mode::Action) {
+            static const std::string kDesc = "description:";
+            if (lower(line.substr(0, kDesc.size())) == kDesc) {
+                out.actionInfo[actionName] = trim(line.substr(kDesc.size()));
+                continue;
+            }
             Steps steps;
             std::string err;
             if (parseSteps(line, steps, err)) { action->insert(action->end(), steps.begin(), steps.end()); continue; }
@@ -198,11 +205,14 @@ bool parseConfig(const std::string& text, Config& out, std::vector<std::string>&
     }
 
     for (const auto& p : pending) {
-        auto it = out.actions.find(p.action);
-        if (it == out.actions.end()) { fail(p.lineNo, "unknown action '" + p.action + "'"); continue; }
-        if (it->second.empty()) { fail(p.lineNo, "action '" + p.action + "' has no steps"); continue; }
+        const Steps* steps = nullptr;
+        if (auto it = out.actions.find(p.action); it != out.actions.end()) steps = &it->second;
+        else if (library)
+            if (auto lit = library->actions.find(p.action); lit != library->actions.end()) steps = &lit->second;
+        if (!steps) { fail(p.lineNo, "unknown action '" + p.action + "'"); continue; }
+        if (steps->empty()) { fail(p.lineNo, "action '" + p.action + "' has no steps"); continue; }
         Scope& s = p.layer < 0 ? out.base : out.layers[p.layer];
-        s.chords[p.index].out = it->second;
+        s.chords[p.index].out = *steps;
     }
     return errors.size() == errorsBefore;
 }
