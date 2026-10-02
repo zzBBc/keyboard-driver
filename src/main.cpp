@@ -4,22 +4,13 @@
 #include <memory>
 
 #include "config_loader.h"
-#include "hook.h"
+#include "engine.h"
+#include "platform.h"
 #include "server.h"
 
-namespace {
-
-std::string exeDir() {
-    char buf[MAX_PATH];
-    DWORD n = GetModuleFileNameA(nullptr, buf, MAX_PATH);
-    std::string path(buf, n);
-    return path.substr(0, path.find_last_of("\\/"));
-}
-
-}  // namespace
-
 int main(int argc, char** argv) {
-    const std::string dir = exeDir();
+    const std::string dir = platform::exeDir();
+    Engine engine;
 
     // Built-in actions shipped next to the exe; configs may use them without defining them.
     auto library = std::make_shared<Config>();
@@ -32,6 +23,7 @@ int main(int argc, char** argv) {
     }
 
     ServerOptions opts;
+    opts.engine = &engine;
     opts.library = library;
     opts.webDir = dir + "\\web";
     opts.devicesDir = dir + "\\devices";
@@ -48,7 +40,7 @@ int main(int argc, char** argv) {
     std::vector<std::string> errors;
     if (!parseConfig(text, *cfg, errors, library.get()))
         for (const auto& e : errors) std::cerr << opts.configPath << ": " << e << "\n";
-    setConfig("", cfg);
+    engine.setConfig("", cfg);
 
     // Per-keyboard configs: devices\<hardware id>.txt
     WIN32_FIND_DATAA fd;
@@ -62,7 +54,7 @@ int main(int argc, char** argv) {
             if (!validDeviceId(id) || !readFile(path, devText)) continue;
             if (!parseConfig(devText, *devCfg, devErrors, library.get()))
                 for (const auto& e : devErrors) std::cerr << path << ": " << e << "\n";
-            setConfig(id, devCfg);
+            engine.setConfig(id, devCfg);
             std::cout << "Keyboard config: " << id << "\n";
         } while (FindNextFileA(h, &fd));
         FindClose(h);
@@ -74,5 +66,5 @@ int main(int argc, char** argv) {
     }
     std::cout << "Config: " << opts.configPath << "\n"
               << "Open http://127.0.0.1:" << opts.port << " to edit mappings. Ctrl+C to quit.\n";
-    return runHook();
+    return platform::runHook(engine);
 }

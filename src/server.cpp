@@ -10,7 +10,7 @@
 #include <thread>
 
 #include "config_loader.h"
-#include "hook.h"
+#include "platform.h"
 #include "key_names.h"
 #include "static_files.h"
 
@@ -192,8 +192,8 @@ void handle(SOCKET s, const ServerOptions& opts) {
         return respond(s, 200, "OK", "text/plain; charset=utf-8", out);
     }
     if (req.method == "GET" && req.path == "/api/devices") {
-        std::string out = "last\t" + lastKeyboard() + "\n";
-        for (const auto& k : listKeyboards()) {
+        std::string out = "last\t" + platform::lastKeyboard() + "\n";
+        for (const auto& k : platform::listKeyboards()) {
             const bool own = fileExists(deviceConfigPath(opts, k.id));
             out += k.id + "\t" + (own ? "1" : "0") + "\t" + k.name + "\n";
         }
@@ -219,7 +219,7 @@ void handle(SOCKET s, const ServerOptions& opts) {
         if (req.method == "DELETE" && !device.empty()) {  // back to the default config
             if (fileExists(file) && !DeleteFileA(file.c_str()))
                 return respond(s, 500, "Error", "text/plain", "cannot delete " + file);
-            setConfig(device, nullptr);
+            opts.engine->setConfig(device, nullptr);
             return respond(s, 200, "OK", "text/plain", "ok");
         }
         if (req.method == "PUT") {
@@ -233,7 +233,7 @@ void handle(SOCKET s, const ServerOptions& opts) {
             if (!device.empty()) CreateDirectoryA(opts.devicesDir.c_str(), nullptr);
             if (!writeFile(file, req.body))
                 return respond(s, 500, "Error", "text/plain", "cannot write " + file);
-            setConfig(device, std::move(cfg));
+            opts.engine->setConfig(device, std::move(cfg));
             return respond(s, 200, "OK", "text/plain", "ok");
         }
     }

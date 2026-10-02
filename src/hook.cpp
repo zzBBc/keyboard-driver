@@ -1,4 +1,4 @@
-#include "hook.h"
+#include "platform.h"
 
 #include "engine.h"
 #include "keycodes.h"
@@ -89,7 +89,7 @@ struct RawEvent {
 constexpr size_t kMaxPending = 64;
 constexpr DWORD kPendingTtlMs = 500;
 
-Engine g_engine;  // the platform-independent decisions; this file only reports events and injects keys
+Engine* g_engine = nullptr;  // the platform-independent decisions; this file only reports events and injects keys
 HHOOK g_hook = nullptr;
 HWND g_rawWindow = nullptr;
 DWORD g_mainThread = 0;
@@ -189,7 +189,7 @@ LRESULT CALLBACK lowLevelKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
     const bool up = (wParam == WM_KEYUP || wParam == WM_SYSKEYUP);
 
     std::vector<KeyEvent> send;
-    const bool swallow = g_engine.handle(attribute(*kb, up), vk, up, send);
+    const bool swallow = g_engine->handle(attribute(*kb, up), vk, up, send);
     for (const KeyEvent& e : send) sendKey(e.key, e.up);
     return swallow ? 1 : CallNextHookEx(g_hook, code, wParam, lParam);
 }
@@ -251,8 +251,13 @@ BOOL WINAPI quitHandler(DWORD type) {
 
 }  // namespace
 
-void setConfig(const std::string& deviceId, std::shared_ptr<const Config> cfg) {
-    g_engine.setConfig(deviceId, std::move(cfg));
+namespace platform {
+
+std::string exeDir() {
+    char buf[MAX_PATH];
+    DWORD n = GetModuleFileNameA(nullptr, buf, MAX_PATH);
+    std::string path(buf, n);
+    return path.substr(0, path.find_last_of("\\/"));
 }
 
 std::vector<KeyboardInfo> listKeyboards() {
@@ -288,7 +293,8 @@ std::string lastKeyboard() {
     return g_lastDevice;
 }
 
-int runHook() {
+int runHook(Engine& engine) {
+    g_engine = &engine;
     g_mainThread = GetCurrentThreadId();
 
     if (!createRawInputWindow())
@@ -310,3 +316,5 @@ int runHook() {
     UnhookWindowsHookEx(g_hook);
     return 0;
 }
+
+}  // namespace platform
