@@ -1,0 +1,12 @@
+# Default config, copied to mappings.txt on first run. Edit it in the web GUI.
+#
+# Base mappings (always active):   from = to
+# RAlt = RCtrl
+#
+# Layers: while the key in the header is held, the mappings below it apply.
+
+[layer CapsLock]
+h = Left
+j = Down
+k = Up
+l = Right

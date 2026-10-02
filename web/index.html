@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Keymapper</title>
+<style>
+  :root {
+    --bg: #fafafa; --panel: #fff; --line: #d8d8de; --text: #1c1c22; --muted: #6a6a76;
+    --accent: #3b5bdb; --bad: #c92a2a; --ok: #2b8a3e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #16161a; --panel: #1f1f25; --line: #34343d; --text: #e8e8ee; --muted: #9a9aa8; --accent: #7c93ff; --bad: #ff6b6b; --ok: #69db7c; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 24px 16px 96px; }
+  h1 { margin: 0 0 4px; font-size: 22px; }
+  .sub { color: var(--muted); margin: 0 0 14px; }
+  button, input, select { font: inherit; color: inherit; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; }
+  button { cursor: pointer; }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  select { max-width: 100%; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: -1px; }
+  .tab { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+  .tab[aria-selected="true"] { background: var(--panel); border-bottom-color: var(--panel); font-weight: 600; }
+  .tab.add { color: var(--muted); border-style: dashed; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 0 8px 8px 8px; padding: 14px; }
+  .row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .row input { flex: 1; min-width: 0; }
+  .row .arrow { color: var(--muted); }
+  .trigger { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  input.invalid { border-color: var(--bad); }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--panel); border-top: 1px solid var(--line); }
+  .bar > div { max-width: 720px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 8px; }
+  #status { flex: 1; color: var(--muted); white-space: pre-wrap; }
+  #status.err { color: var(--bad); } #status.ok { color: var(--ok); }
+  details { margin-top: 16px; color: var(--muted); }
+  pre { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; overflow: auto; color: var(--text); }
+  .empty { color: var(--muted); padding: 8px 0 12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Keymapper</h1>
+  <p class="sub">Changes apply immediately when you save. No restart needed.</p>
+  <p class="sub">
+    Keyboard:
+    <select id="device"></select>
+    <button id="detect" title="Select the keyboard you pressed a key on last">Detect</button>
+    <button id="reset" hidden>Use default config</button>
+  </p>
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <div class="panel" id="panel"></div>
+  <details>
+    <summary>Config file preview</summary>
+    <pre id="preview"></pre>
+  </details>
+</main>
+<div class="bar"><div>
+  <span id="status">Loading…</span>
+  <button id="revert">Revert</button>
+  <button id="save" class="primary">Save</button>
+</div></div>
+<datalist id="keys"></datalist>
+
+<script>
+// state: { base: [[from, to]], layers: [{ trigger, maps: [[from, to]] }] }
+const $ = id => document.getElementById(id);
+let state = { base: [], layers: [] }, saved = '', current = 'base', validKeys = new Set();
+let device = '';   // '' = default config, else a hardware id
+let devices = [];  // [{ id, own, name }]
+let lastKb = '';
+
+function parse(text) {
+  const s = { base: [], layers: [] };
+  let list = s.base;
+  for (let line of text.split('\n')) {
+    const hash = line.indexOf('#'); if (hash >= 0) line = line.slice(0, hash);
+    line = line.trim(); if (!line) continue;
+    if (line.startsWith('[') && line.endsWith(']')) {
+      const inner = line.slice(1, -1).trim();
+      if (inner.toLowerCase() === 'base') list = s.base;
+      else if (/^layer\b/i.test(inner)) { const l = { trigger: inner.slice(5).trim(), maps: [] }; s.layers.push(l); list = l.maps; }
+      continue;
+    }
+    const eq = line.indexOf('=', 1); if (eq < 0) continue;
+    list.push([line.slice(0, eq).trim(), line.slice(eq + 1).trim()]);
+  }
+  return s;
+}
+
+function serialize(s) {
+  const rows = m => m.filter(([a, b]) => a || b).map(([a, b]) => `${a} = ${b}`);
+  let out = rows(s.base).join('\n');
+  for (const l of s.layers) out += `${out ? '\n\n' : ''}[layer ${l.trigger}]\n${rows(l.maps).join('\n')}`;
+  return out + '\n';
+}
+
+function maps() { return current === 'base' ? state.base : state.layers[current].maps; }
+
+function render() {
+  const tabs = $('tabs'); tabs.innerHTML = '';
+  const mk = (label, key, cls) => {
+    const b = document.createElement('button');
+    b.className = 'tab ' + (cls || ''); b.textContent = label; b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', String(current === key));
+    b.onclick = () => { if (key === 'add') addLayer(); else { current = key; render(); } };
+    tabs.appendChild(b);
+  };
+  mk('Base', 'base');
+  state.layers.forEach((l, i) => mk(`Layer: ${l.trigger || '?'}`, i));
+  mk('+ Layer', 'add', 'add');
+
+  const p = $('panel'); p.innerHTML = '';
+  const isLayer = current !== 'base';
+  const list = maps();
+
+  if (isLayer) {
+    const t = document.createElement('div'); t.className = 'trigger';
+    t.append('While holding ', keyInput(state.layers[current].trigger, v => { state.layers[current].trigger = v; renderTabsOnly(); }), ' these apply:');
+    p.appendChild(t);
+  }
+  if (!list.length) { const e = document.createElement('div'); e.className = 'empty'; e.textContent = 'No mappings yet.'; p.appendChild(e); }
+
+  list.forEach((pair, i) => {
+    const r = document.createElement('div'); r.className = 'row';
+    const arrow = document.createElement('span'); arrow.className = 'arrow'; arrow.textContent = '→';
+    const d = document.createElement('button'); d.textContent = '×'; d.title = 'Remove';
+    d.onclick = () => { list.splice(i, 1); render(); };
+    r.append(keyInput(pair[0], v => pair[0] = v), arrow, keyInput(pair[1], v => pair[1] = v), d);
+    p.appendChild(r);
+  });
+
+  const act = document.createElement('div'); act.className = 'actions';
+  const add = document.createElement('button'); add.textContent = '+ Add mapping';
+  add.onclick = () => { list.push(['', '']); render(); const ins = p.querySelectorAll('.row input'); ins[ins.length - 2].focus(); };
+  act.appendChild(add);
+  if (isLayer) {
+    const vim = document.createElement('button'); vim.textContent = 'Add HJKL arrows';
+    vim.onclick = () => { for (const [a, b] of [['h','left'],['j','down'],['k','up'],['l','right']]) if (!list.some(x => x[0].toLowerCase() === a)) list.push([a, b]); render(); };
+    const del = document.createElement('button'); del.textContent = 'Delete layer';
+    del.onclick = () => { state.layers.splice(current, 1); current = 'base'; render(); };
+    act.append(vim, del);
+  }
+  p.appendChild(act);
+  updateMeta();
+}
+
+function renderTabsOnly() { // keep input focus while typing a layer key
+  const tabs = $('tabs').children;
+  state.layers.forEach((l, i) => tabs[i + 1].textContent = `Layer: ${l.trigger || '?'}`);
+  updateMeta();
+}
+
+function keyInput(value, onChange) {
+  const i = document.createElement('input');
+  i.value = value; i.setAttribute('list', 'keys'); i.autocomplete = 'off'; i.spellcheck = false;
+  const check = () => i.classList.toggle('invalid', !!i.value && validKeys.size > 0 && !validKeys.has(i.value.toLowerCase()));
+  i.oninput = () => { onChange(i.value.trim()); check(); updateMeta(); };
+  check();
+  return i;
+}
+
+function problems() {
+  const out = [];
+  const bad = k => !k || (validKeys.size && !validKeys.has(k.toLowerCase()));
+  const scan = (label, list) => list.forEach(([a, b]) => { if (a || b) { if (bad(a)) out.push(`${label}: unknown key "${a}"`); if (bad(b)) out.push(`${label}: unknown key "${b}"`); } });
+  scan('Base', state.base);
+  state.layers.forEach(l => { if (bad(l.trigger)) out.push(`Layer: unknown key "${l.trigger}"`); scan(`Layer ${l.trigger}`, l.maps); });
+  return out;
+}
+
+function updateMeta() {
+  const text = serialize(state);
+  $('preview').textContent = text;
+  const dirty = text !== saved;
+  $('save').disabled = !dirty; $('revert').disabled = !dirty;
+  const probs = problems();
+  if (probs.length) setStatus(probs[0] + (probs.length > 1 ? ` (+${probs.length - 1} more)` : ''), 'err');
+  else setStatus(dirty ? 'Unsaved changes' : 'Saved and active', dirty ? '' : 'ok');
+}
+
+function setStatus(msg, cls) { const s = $('status'); s.textContent = msg; s.className = cls || ''; }
+
+function addLayer() {
+  state.layers.push({ trigger: '', maps: [] });
+  current = state.layers.length - 1; render();
+  document.querySelector('.trigger input').focus();
+}
+
+const cfgUrl = () => '/api/config' + (device ? '?device=' + encodeURIComponent(device) : '');
+const HDR = { 'X-Requested-With': 'keymapper' };
+
+async function save() {
+  if (problems().length) return updateMeta();
+  const text = serialize(state);
+  const res = await fetch(cfgUrl(), { method: 'PUT', headers: { ...HDR, 'Content-Type': 'text/plain' }, body: text });
+  if (res.ok) { saved = text; updateMeta(); refreshDevices(); }
+  else setStatus('Server rejected the config:\n' + await res.text(), 'err');
+}
+
+async function loadConfig() {
+  state = parse(await fetch(cfgUrl()).then(r => r.text())); saved = serialize(state); current = 'base'; render();
+}
+
+function renderDevices() {
+  const sel = $('device');
+  sel.innerHTML = '';
+  const add = (id, label) => { const o = document.createElement('option'); o.value = id; o.textContent = label; sel.appendChild(o); };
+  add('', 'Default (keyboards without their own config)');
+  for (const d of devices) add(d.id, (d.name === d.id ? d.id : `${d.name} (${d.id})`) + (d.own ? ' ✓' : '') + (d.id === lastKb ? ' ← last used' : ''));
+  if (device && !devices.some(d => d.id === device)) add(device, device + ' (not connected)');
+  sel.value = device;
+  const cur = devices.find(d => d.id === device);
+  $('reset').hidden = !(device && (!cur || cur.own));
+}
+
+async function refreshDevices() {
+  const lines = (await fetch('/api/devices').then(r => r.text())).split('\n').filter(Boolean);
+  lastKb = '';
+  devices = [];
+  for (const l of lines) {
+    const [id, own, ...name] = l.split('\t');
+    if (id === 'last') lastKb = own || ''; else devices.push({ id, own: own === '1', name: name.join('\t') });
+  }
+  renderDevices();
+}
+
+async function switchDevice(id) {
+  if (serialize(state) !== saved && !confirm('Discard unsaved changes?')) return renderDevices();
+  device = id; renderDevices(); await loadConfig();
+}
+
+async function load() {
+  const keys = await fetch('/api/keys').then(r => r.text());
+  const names = keys.split('\n').filter(Boolean);
+  validKeys = new Set(names.map(n => n.toLowerCase()));
+  $('keys').innerHTML = names.map(n => `<option value="${n}">`).join('');
+  await refreshDevices();
+  await loadConfig();
+}
+
+$('device').onchange = e => switchDevice(e.target.value);
+$('detect').onclick = async () => { await refreshDevices(); if (lastKb) switchDevice(lastKb); else setStatus('Press a key on the keyboard first', ''); };
+$('reset').onclick = async () => {
+  if (!confirm("Delete this keyboard's own config and use the default?")) return;
+  await fetch(cfgUrl(), { method: 'DELETE', headers: HDR });
+  await refreshDevices(); await loadConfig();
+};
+setInterval(() => { if (document.activeElement !== $('device')) refreshDevices().catch(() => {}); }, 3000);
+
+$('save').onclick = () => save().catch(e => setStatus('Save failed: ' + e.message, 'err'));
+$('revert').onclick = () => { state = parse(saved); current = 'base'; render(); };
+window.addEventListener('beforeunload', e => { if (serialize(state) !== saved) e.preventDefault(); });
+load().catch(e => setStatus('Cannot reach keymapper: ' + e.message, 'err'));
+</script>
+</body>
+</html>
