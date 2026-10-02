@@ -26,7 +26,7 @@ target_link_libraries(keymapper PRIVATE keymapper_core)
 if(WIN32)
     target_sources(keymapper PRIVATE src/platform/windows/windows_platform.cpp)
     target_compile_definitions(keymapper PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-    target_link_libraries(keymapper PRIVATE ws2_32 hid)
+    target_link_libraries(keymapper PRIVATE ws2_32 hid shell32)
 else()
     message(FATAL_ERROR "There is no platform layer for this OS yet. Add src/platform/<os>/ "
                         "implementing src/platform/platform.h and list it here.")

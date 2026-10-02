@@ -73,7 +73,9 @@ int main(int argc, char** argv) {
         std::cerr << "Cannot listen on 127.0.0.1:" << opts.port << " (already running?)\n";
         return 1;
     }
+    const std::string url = "http://127.0.0.1:" + std::to_string(opts.port);
     std::cout << "Config: " << opts.configPath << "\n"
-              << "Open http://127.0.0.1:" << opts.port << " to edit mappings. Ctrl+C to quit.\n";
+              << "Open " << url << " to edit mappings. Ctrl+C to quit.\n";
+    platform::openUrl(url);
     return platform::runHook(engine);
 }

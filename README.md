@@ -21,7 +21,7 @@ The build copies `web/`, the built-in actions (`actions.txt`) and the default co
 build\Release\keymapper.exe [config-path] [port]
 ```
 
-Then open http://127.0.0.1:8765 (the default port). A global keyboard hook is active while it runs,
+It opens http://127.0.0.1:8765 (the default port) in your default browser. A global keyboard hook is active while it runs,
 so remaps apply to every program.
 
 To stop it, click **Stop app** in the GUI's bottom bar (or press Ctrl+C in its console window, or
