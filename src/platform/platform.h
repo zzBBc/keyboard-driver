@@ -27,6 +27,9 @@ std::string lastKeyboard();
 // false if the other copy did not go away. Call this first thing at start-up.
 bool takeOverFromRunningInstance();
 
+// Opens `url` in the user's default browser. Returns false if it could not be launched.
+bool openUrl(const std::string& url);
+
 // Ask the running keyboard hook to stop, so runHook() returns. Safe to call from any thread, and
 // before runHook() has started (then it returns as soon as it starts).
 void requestQuit();

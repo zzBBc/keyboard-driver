@@ -6,6 +6,7 @@
 
 #include <windows.h>
 #include <hidsdi.h>
+#include <shellapi.h>
 
 #include <algorithm>
 #include <atomic>
@@ -294,6 +295,11 @@ std::vector<KeyboardInfo> listKeyboards() {
 std::string lastKeyboard() {
     std::lock_guard<std::mutex> lock(g_lastMutex);
     return g_lastDevice;
+}
+
+bool openUrl(const std::string& url) {
+    const std::wstring wide(url.begin(), url.end());  // URLs here are plain ASCII
+    return reinterpret_cast<INT_PTR>(ShellExecuteW(nullptr, L"open", wide.c_str(), nullptr, nullptr, SW_SHOWNORMAL)) > 32;
 }
 
 void requestQuit() {
