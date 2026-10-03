@@ -1,7 +1,7 @@
 name: PR
 
-# Pull requests build and run both test suites on Windows, macOS and Linux (the Android layer), and check that the
-# Android app still builds. Nothing is published.
+# Pull requests build and run both test suites on Windows, macOS and Linux (the Android layer). Nothing is
+# published, and the Android app is only built by the release workflows.
 on:
   pull_request:
 
@@ -24,15 +24,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/test-android
 
-  build_android:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/build-android
-
-  # The one check the "master requires the PR check" ruleset waits for: passes when every job passes.
+  # The one check the "master requires the PR check" ruleset waits for: passes when all three pass.
   pr:
-    needs: [test_windows, test_macos, test_android, build_android]
+    needs: [test_windows, test_macos, test_android]
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Everything passed"
+      - run: echo "All three passed"
