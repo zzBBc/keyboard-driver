@@ -1,0 +1,33 @@
+name: Build (Android)
+description: Builds the debug-signed Android APK as keymapper-android.apk and uploads it as the "android" artifact.
+
+# Composite action: the calling job runs on ubuntu-latest and checks out the repo first. It compiles the
+# native library (CMake, through the NDK) and the app with Gradle, without running tests: the portable
+# core and the Android key decisions are tested by the Windows and macOS test jobs (tests/android/).
+# The APK is signed with the debug key, so it installs by sideloading, not from a store.
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 17
+
+    - uses: gradle/actions/setup-gradle@v4
+      with:
+        gradle-version: 8.7
+
+    - name: Build the APK
+      shell: bash
+      run: gradle -p android assembleDebug
+
+    - name: Name the APK
+      shell: bash
+      run: cp android/app/build/outputs/apk/debug/app-debug.apk keymapper-android.apk
+
+    - name: Upload the APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: android
+        path: keymapper-android.apk
+        if-no-files-found: error

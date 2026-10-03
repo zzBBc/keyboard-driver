@@ -1,5 +1,5 @@
 name: Publish
-description: Commits the built zip of one OS, or of every OS, back to the default branch, in release/<os>/[<version>/].
+description: Commits the built zip (APK on Android) of one OS, or of every OS, back to the default branch, in release/<os>/[<version>/].
 
 # Composite action: the calling job runs on ubuntu-latest and has the default branch checked out with
 # the deploy key (`ssh-key`), because a local action can only be used once the repo is checked out.
@@ -9,7 +9,7 @@ description: Commits the built zip of one OS, or of every OS, back to the defaul
 # runs with their trigger (tag or manual run).
 inputs:
   os:
-    description: 'The artifact to publish (windows, macos). Leave empty to publish every artifact'
+    description: 'The artifact to publish (windows, macos, android). Leave empty to publish every artifact'
     required: false
     default: ''
   deploy-key:
@@ -58,7 +58,7 @@ runs:
         name: ${{ inputs.os }}
         path: staging/${{ inputs.os }}  # one sub-folder per artifact, named after the os
 
-    - name: Place the zips in release/<os>/[<version>/]
+    - name: Place the builds in release/<os>/[<version>/]
       shell: bash
       env:
         VERSION: ${{ steps.version.outputs.value }}
@@ -68,10 +68,11 @@ runs:
           dest="release/$os"
           [[ -n "$VERSION" ]] && dest="$dest/$VERSION"
           mkdir -p "$dest"
-          # keymapper-<os>.zip, or keymapper-<os>-<version>.zip. Only this file is replaced, so
+          # keymapper-<os>.zip (.apk for android), or keymapper-<os>-<version>.zip. Only this file is replaced, so
           # publishing without a version leaves the version folders inside release/<os>/ alone.
-          cp "${osdir}keymapper-$os.zip" "$dest/keymapper-$os${VERSION:+-$VERSION}.zip"
-          echo "published $os to $dest/keymapper-$os${VERSION:+-$VERSION}.zip"
+          ext=zip; [[ "$os" == android ]] && ext=apk  # Android ships an APK, the others a zip
+          cp "${osdir}keymapper-$os.$ext" "$dest/keymapper-$os${VERSION:+-$VERSION}.$ext"
+          echo "published $os to $dest/keymapper-$os${VERSION:+-$VERSION}.$ext"
         done
 
     - name: Commit and push

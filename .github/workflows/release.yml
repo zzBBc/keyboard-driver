@@ -3,7 +3,8 @@ name: Release
 # Runs on a version tag (v1.2.3) or a manual run. A plain push to a branch (master included) does not
 # start it, and pull requests have their own workflow (pr.yml).
 # It tests Windows and macOS side by side, packages each OS once its tests pass (one failing stops the
-# release), then publishes both zips in a single commit to release/<os>/<version>/ when there is a
+# release; the Android APK is built after both pass, since they also run its tests), then publishes the
+# zips and the APK in a single commit to release/<os>/<version>/ when there is a
 # version, release/<os>/ when there is not.
 on:
   push:
@@ -42,9 +43,16 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/build-macos
 
-  # Commit both built zips into the repo with one push.
+  build_android:
+    needs: [test_windows, test_macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-android
+
+  # Commit the built zips and the APK into the repo with one push.
   publish:
-    needs: [build_windows, build_macos]
+    needs: [build_windows, build_macos, build_android]
     runs-on: ubuntu-latest
     permissions:
       contents: read  # the push uses the deploy key, not this token
