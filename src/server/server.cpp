@@ -36,6 +36,7 @@ bool startNetworking() {
 #else
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <signal.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
@@ -48,7 +49,10 @@ void setReceiveTimeout(socket_t s, int ms) {
     timeval t{ms / 1000, (ms % 1000) * 1000};
     setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &t, sizeof t);
 }
-bool startNetworking() { return true; }
+bool startNetworking() {
+    signal(SIGPIPE, SIG_IGN);  // a browser that hangs up mid-reply must not kill the program
+    return true;
+}
 }  // namespace
 #endif
 

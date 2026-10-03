@@ -1,6 +1,6 @@
 #pragma once
 // What the program needs from the operating system. Each supported OS provides one implementation of
-// this (platform/windows/ today). Everything else (config, engine, server, GUI) is portable.
+// this (platform/windows/, platform/macos/). Everything else (config, engine, server, GUI) is portable.
 #include <string>
 #include <vector>
 
