@@ -1,0 +1,32 @@
+name: Build and test (macOS)
+
+# Reusable: builds the app on macOS and runs both test suites, and nothing else (no packaging).
+# pr.yml and release.yml call it (`uses: ./.github/workflows/test_macos.yml`) next to test_windows.yml,
+# so a pull request and a release are tested the same way.
+on:
+  workflow_call:
+
+jobs:
+  test:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # Makefiles are single-config: the build type is picked here, not at build time.
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build (Release)
+        run: cmake --build build
+
+      # tests/common/ and tests/macos/
+      - name: C++ tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: GUI tests
+        run: node --test "tests/web/*.test.js"

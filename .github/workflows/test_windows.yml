@@ -1,0 +1,32 @@
+name: Build and test (Windows)
+
+# Reusable: builds the app on Windows and runs both test suites, and nothing else (no packaging).
+# pr.yml and release.yml call it (`uses: ./.github/workflows/test_windows.yml`) next to test_macos.yml,
+# so a pull request and a release are tested the same way.
+on:
+  workflow_call:
+
+jobs:
+  test:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Configure
+        run: cmake -S . -B build
+
+      - name: Build (Release)
+        run: cmake --build build --config Release
+
+      # tests/common/ and tests/windows/
+      - name: C++ tests
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: GUI tests
+        shell: bash
+        run: node --test "tests/web/*.test.js"

@@ -5,5 +5,8 @@ on:
   pull_request:
 
 jobs:
-  test:
-    uses: ./.github/workflows/test.yml
+  test_windows:
+    uses: ./.github/workflows/test_windows.yml
+
+  test_macos:
+    uses: ./.github/workflows/test_macos.yml
