@@ -150,19 +150,22 @@ ctrl+c, ctrl+v               # steps run in order
   writes the `none` line. The shipped action lists declare no defaults at the moment.
 - Defining an action with the same name as a built-in one in your config overrides it.
 
-**Built-in actions** (`config/actions.windows.txt` on Windows) are 44 common shortcuts in five categories:
-- *Windows and desktops:* `switch-window`, `previous-window`, `task-view`, `close-window`,
+**Built-in actions** (`config/actions.windows.txt` on Windows) are 49 common shortcuts in five categories:
+- *Windows and desktops:* `switch-window`, `previous-window`, `task-view`, `close-window`, `quit-app`,
   `show-desktop`, `lock-screen`, `snap-left`, `next-desktop`, ...
 - *Media and browser:* `volume-up`, `volume-down`, `mute`, `play-pause`, `next-track`,
   `previous-track`, `stop-media`, `browser-back`/`-forward`/`-refresh`/`-home`, `launch-mail`.
-- *Launch:* `file-explorer`, `run-dialog`, `screenshot-region`, `emoji-picker`, `clipboard-history`.
+- *Launch:* `file-explorer`, `run-dialog`, `screenshot-screen`, `screenshot-region` (each also as
+  `-clipboard`), `screenshot-tool`, `emoji-picker`, `clipboard-history`.
 - *Editing:* `copy`, `cut`, `paste`, `undo`, `redo`, `select-all`, ...
 - *Tabs:* `next-tab`, `previous-tab`, `new-tab`, `close-tab`, `reopen-tab`.
 
-On macOS the list is `config/actions.macos.txt`: the same names with Mac shortcuts (`task-view` opens
-Mission Control, `run-dialog` opens Spotlight, `copy` sends `cmd+c`...), plus `next-app-window`,
-`quit-app`, `hide-app` and `screenshot-tool`. Actions macOS has no shortcut for (`snap-left`/`-right`,
-`new-desktop`, `clipboard-history`, `stop-media`, `browser-home`, `launch-mail`) are left out.
+On macOS the list is `config/actions.macos.txt` (45 actions): the same names with Mac shortcuts
+(`task-view` opens Mission Control, `run-dialog` opens Spotlight, `copy` sends `cmd+c`...), plus
+`next-app-window` and `hide-app`, which Windows has no shortcut for. Actions macOS has no shortcut
+for (`snap-left`/`-right`, `new-desktop`, `clipboard-history`, `stop-media`, `launch-mail`) are left
+out: window tiling needs the Fn (Globe) key, which keymapper can't send, and macOS has no stop or
+mail key.
 
 None has a default shortcut. The GUI chooses actions from these lists and does not create new ones;
 to define your own, write an `[action ...]` block in the config file. The media actions send the same

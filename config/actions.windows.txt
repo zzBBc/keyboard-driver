@@ -1,7 +1,8 @@
 # Built-in actions for Windows, loaded by the program on Windows (actions.macos.txt on macOS) and
 # shown in the GUI. The build copies this file next to the exe; do not edit that copy (it is
 # replaced on every build). Bind one with "alt+q = @name" in any config, or define an action of the
-# same name in your own config to override it. Keep the names in step with actions.macos.txt.
+# same name in your own config to override it. Keep the names in step with actions.macos.txt: an
+# action Windows has no shortcut for (hide-app, next-app-window) is left out.
 #
 # [action name]
 # description: what it does
@@ -27,6 +28,11 @@ win+tab
 
 [action close-window]
 description: Close the active window
+category: Windows and desktops
+alt+f4
+
+[action quit-app]
+description: Quit the active app (closes its window)
 category: Windows and desktops
 alt+f4
 
@@ -156,8 +162,28 @@ description: Open the Run dialog
 category: Launch
 win+r
 
+[action screenshot-screen]
+description: Capture the whole screen to a file in Pictures\Screenshots
+category: Launch
+win+printscreen
+
+[action screenshot-screen-clipboard]
+description: Capture the whole screen to the clipboard (unless Print Screen is set to open Snipping Tool)
+category: Launch
+printscreen
+
 [action screenshot-region]
 description: Capture part of the screen (Snipping Tool)
+category: Launch
+win+shift+s
+
+[action screenshot-region-clipboard]
+description: Capture part of the screen to the clipboard (Snipping Tool)
+category: Launch
+win+shift+s
+
+[action screenshot-tool]
+description: Open the Snipping Tool capture bar (snip or record)
 category: Launch
 win+shift+s
 

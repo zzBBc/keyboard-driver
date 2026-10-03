@@ -5,8 +5,9 @@
 #
 # Same names as the Windows actions, so a config binding @close-window works on both. Modifiers use
 # the Mac names: cmd, option, control, shift (win, alt and ctrl mean the same and work too). Key
-# names keep their Windows names (lwin is the left Command key). An action with no macOS shortcut
-# (snap-left, new-desktop, clipboard-history, the browser and mail keys...) is left out.
+# names keep their Windows names (lwin is the left Command key). An action keymapper can't do on
+# macOS is left out: snap-left/-right (tiling needs the Fn/Globe key, which can't be sent), new-desktop
+# (no shortcut), clipboard-history (none before macOS 26), stop-media and launch-mail (no such key).
 #
 # [action name]
 # description: what it does
@@ -134,6 +135,11 @@ description: Refresh the page
 category: Media and browser
 cmd+r
 
+[action browser-home]
+description: Open the browser home page (Safari, Chrome)
+category: Media and browser
+cmd+shift+h
+
 # --- Launch ---
 
 [action file-explorer]
@@ -146,10 +152,25 @@ description: Open Spotlight
 category: Launch
 cmd+space
 
+[action screenshot-screen]
+description: Capture the whole screen to a file on the desktop
+category: Launch
+cmd+shift+3
+
+[action screenshot-screen-clipboard]
+description: Capture the whole screen to the clipboard
+category: Launch
+control+shift+cmd+3
+
 [action screenshot-region]
-description: Capture part of the screen
+description: Capture part of the screen to a file on the desktop
 category: Launch
 cmd+shift+4
+
+[action screenshot-region-clipboard]
+description: Capture part of the screen to the clipboard
+category: Launch
+control+shift+cmd+4
 
 [action screenshot-tool]
 description: Open the Screenshot toolbar (capture or record)
