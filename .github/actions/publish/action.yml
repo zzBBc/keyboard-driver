@@ -1,12 +1,17 @@
 name: Publish
-description: Commits the built zips (one artifact per os) back to the default branch, in release/<os>/[<version>/].
+description: Commits the built zip of one OS, or of every OS, back to the default branch, in release/<os>/[<version>/].
 
 # Composite action: the calling job runs on ubuntu-latest and has the default branch checked out with
 # the deploy key (`ssh-key`), because a local action can only be used once the repo is checked out.
-# It publishes every artifact of the run (one per os, named after it, from the build jobs):
-# release/<os>/<version>/ when there is a version, release/<os>/ when there is not.
-# release.yml calls it, so it runs with its trigger (tag or manual run).
+# It publishes the artifact named after the os, or every artifact of the run (one per os) when no os is
+# given: release/<os>/<version>/ when there is a version, release/<os>/ when there is not.
+# release.yml (both OSes, one commit) and release_windows.yml / release_macos.yml (one OS) call it, so it
+# runs with their trigger (tag or manual run).
 inputs:
+  os:
+    description: 'The artifact to publish (windows, macos). Leave empty to publish every artifact'
+    required: false
+    default: ''
   deploy-key:
     description: 'The private half of the deploy key (RELEASE_DEPLOY_KEY), a secret the caller passes in'
     required: true
@@ -50,7 +55,8 @@ runs:
     - name: Download the build
       uses: actions/download-artifact@v4
       with:
-        path: staging  # no name: every artifact, each in a sub-folder named after the os
+        name: ${{ inputs.os }}
+        path: staging/${{ inputs.os }}  # one sub-folder per artifact, named after the os
 
     - name: Place the zips in release/<os>/[<version>/]
       shell: bash
@@ -73,6 +79,7 @@ runs:
       env:
         VERSION: ${{ steps.version.outputs.value }}
         BRANCH: ${{ github.event.repository.default_branch }}
+        OS: ${{ inputs.os }}
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -81,7 +88,7 @@ runs:
           echo "release/ is already up to date"
           exit 0
         fi
-        if [[ -n "$VERSION" ]]; then message="chore: add release $VERSION builds"; else message="chore: update release builds"; fi
+        if [[ -n "$VERSION" ]]; then message="chore: add release $VERSION builds${OS:+ ($OS)}"; else message="chore: update release builds${OS:+ ($OS)}"; fi
         git commit -m "$message"
         git pull --rebase origin "$BRANCH"
         git push origin "HEAD:$BRANCH"

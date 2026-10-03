@@ -1,36 +1,27 @@
-name: Release
+name: Release (macOS)
 
-# Runs on a version tag (v1.2.3) or a manual run. A plain push to a branch (master included) does not
-# start it, and pull requests have their own workflow (pr.yml).
-# It tests and packages Windows and macOS side by side (one failing stops the release), then publishes
-# both zips in a single commit to release/<os>/<version>/ when there is a version, release/<os>/ when
-# there is not.
+# Releases macOS only, on a manual run. release.yml releases both OSes at once (tag or manual run).
+# It builds macOS (.github/actions/build-macos: tests, then a zip) and then publishes it
+# (.github/actions/publish) to release/macos/<version>/ when there is a version, release/macos/ when there
+# is not.
 on:
-  push:
-    tags: ['v*']
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version folder (for example v1.2.3). Leave empty to publish to release/<os>/'
+        description: 'Version folder (for example v1.2.3). Leave empty to publish to release/macos/'
         required: false
         default: ''
 
 jobs:
-  build_windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/build-windows
-
-  build_macos:
+  build:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/build-macos
 
-  # Commit both built zips into the repo with one push.
+  # Commit the built zip into the repo (this workflow only runs by hand).
   publish:
-    needs: [build_windows, build_macos]
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: read  # the push uses the deploy key, not this token
@@ -45,4 +36,5 @@ jobs:
           ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}  # git pull and push go over SSH with this key
       - uses: ./.github/actions/publish
         with:
+          os: macos
           deploy-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
