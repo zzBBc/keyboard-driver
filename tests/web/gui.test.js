@@ -106,6 +106,14 @@ test('your own version of a built-in action wins in actionInfo', () => {
   assert.strictEqual(run(`actionInfo('nope')`), null);
 });
 
+test('reset drops your version of a built-in action, keeping its shortcuts', () => {
+  const run = loadGui();
+  run(`state = parse('[action undo]\\nalt+z\\n\\nctrl+z = @undo\\n')`);
+  run(`resetSends('undo')`);
+  assert.deepStrictEqual(JSON.parse(run('JSON.stringify([state.actions, state.base])')), [[], [['ctrl+z', '@undo']]]);
+  assert.strictEqual(run(`actionInfo('undo').steps`), 'ctrl+z');
+});
+
 // ---- shortcuts: defaults, clearing, removing ----
 
 test('a default shortcut shows until the config binds or clears that combo', () => {
