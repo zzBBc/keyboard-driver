@@ -1,8 +1,8 @@
 name: Build and test (macOS)
 
 # Reusable: builds the app on macOS and runs both test suites, and nothing else (no packaging).
-# pr.yml and release.yml call it (`uses: ./.github/workflows/test_macos.yml`) next to test_windows.yml,
-# so a pull request and a release are tested the same way.
+# pr.yml and release_macos.yml call it (`uses: ./.github/workflows/test_macos.yml`), so a pull
+# request and a release are tested the same way.
 on:
   workflow_call:
 
