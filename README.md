@@ -33,14 +33,35 @@ The GUI server only listens on localhost and rejects requests from other sites.
 
 ### macOS
 
-- On first start macOS asks for two permissions in **System Settings > Privacy & Security**:
-  **Accessibility** (to intercept and send keys) and **Input Monitoring** (to tell keyboards apart).
-  When you start it from a terminal, the permissions belong to the terminal app. Restart keymapper
-  after granting them. Without Input Monitoring every keyboard uses the default config.
+To run the release zip:
+
+1. Unzip it and move the folder out of Downloads, for example to `~/Applications/keymapper`. macOS
+   ties the permissions below to the program's path, so keep it in one place.
+2. The zip is not signed, so macOS says it "could not verify keymapper is free of malware". Clear the
+   download quarantine from the whole folder:
+
+   ```
+   xattr -dr com.apple.quarantine ~/Applications/keymapper
+   ```
+
+   If `xattr` says "Operation not permitted", your terminal app may not have access to that folder:
+   grant it under **System Settings > Privacy & Security > Files and Folders** (or **Full Disk
+   Access**), or run the command from another terminal. Instead of `xattr`, you can also start
+   keymapper once, then click **Open Anyway** in **System Settings > Privacy & Security**.
+3. Start it (`./keymapper` in the folder). On first start macOS asks for two permissions. Turn both on
+   in **System Settings > Privacy & Security**:
+   - **Accessibility**: to intercept and send keys. Remapping does nothing without it.
+   - **Input Monitoring**: to tell keyboards apart. Without it every keyboard uses the default config.
+
+   If the app is not in a list, click **+** and add it. When you start keymapper from a terminal,
+   the permissions belong to the terminal app (Terminal, iTerm, ...), so turn them on for that app.
+4. Restart keymapper after granting the permissions.
+
+A new release replaces the program, and macOS may ask for the permissions again. If remapping stops
+working after an update, remove the old entry with **-** in both lists and grant it again.
+
 - Stop it with **Stop app**, Ctrl+C, or `pkill keymapper`. Starting it again stops the running copy,
   as on Windows.
-- The release zip is not signed. If macOS refuses to open it, run
-  `xattr -d com.apple.quarantine keymapper` in the unzipped folder.
 - Key names keep their Windows names: `win`/`lwin`/`rwin` is Command, `alt` is Option, `apps` is the
   context-menu key, `insert` is Help. The built-in actions send Windows shortcuts (`win+d`,
   `alt+f4`...), so most of them mean something else on macOS. Bind keys or your own actions there.
