@@ -159,6 +159,7 @@ test('every layout file is well formed and names only real keys', () => {
   for (const f of files) {
     const l = JSON.parse(readLayout(path.basename(f, '.json')));
     assert.deepStrictEqual(Object.keys(l.mods).sort(), ['alt', 'ctrl', 'shift', 'win'], f);
+    assert.deepStrictEqual(Object.keys(l.names).sort(), ['alt', 'ctrl', 'shift', 'win'], f);
     assert.strictEqual(typeof l.actionsNote, 'string', f);
     const drawn = [];
     for (const row of l.rows) {
@@ -186,4 +187,30 @@ test('key and modifier labels come from the layout', () => {
   assert.strictEqual(run(`keyLabel('backspace')`), 'Delete');
   assert.strictEqual(run(`keyLabel('insert')`), 'Help');
   assert.strictEqual(run(`keyLabel('f13')`), 'F13');     // not in the labels: upper-cased name
+});
+
+test('on macOS the GUI writes Mac modifier names, and either name is the same combo', () => {
+  const run = loadGui();
+  run(`layout = ${readLayout('macos')}`);
+  assert.strictEqual(run(`normChord('win+shift+z')`), 'shift+cmd+z');
+  assert.strictEqual(run(`normChord('cmd+shift+z')`), run(`normChord('Shift + Win + z')`));
+  assert.strictEqual(run(`normChord('ctrl+alt+q')`), 'control+option+q');
+  assert.ok(run(`validChord('cmd+option+q') && validChord('command+opt+control+q') && validChord('win+q')`));
+  assert.ok(!run(`validChord('super+q')`));
+  assert.strictEqual(run(`stepsText(stepsFromText('win+c, win+v'))`), 'cmd+c, cmd+v');
+  assert.strictEqual(run(`chordLabel(normChord('win+alt+q'))`), 'Option+Cmd+Q');
+  // A mapping written with the Windows names is still found under the Mac ones.
+  run(`state = parse('win+q = tab\\n')`);
+  run(`setTarget(state.base, normChord('cmd+q'), 'esc')`);
+  assert.deepStrictEqual(JSON.parse(run('JSON.stringify(state.base)')), [['win+q', 'esc']]);
+  // A new mapping is written with the Mac names.
+  run(`setTarget(state.base, normChord('alt+z'), '@undo')`);
+  assert.strictEqual(run('state.base[1][0]'), 'option+z');
+});
+
+test('on Windows the GUI keeps writing win, alt and ctrl', () => {
+  const run = loadGui();
+  run(`layout = ${readLayout('windows')}`);
+  assert.strictEqual(run(`normChord('cmd+option+q')`), 'alt+win+q');
+  assert.strictEqual(run(`stepsText(stepsFromText('control+c'))`), 'ctrl+c');
 });

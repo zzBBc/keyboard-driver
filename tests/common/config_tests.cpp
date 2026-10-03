@@ -273,3 +273,13 @@ TEST(shippedActionListsParse) {
     CHECK(mac.cfg.actions["copy"].size() == 1 && mac.cfg.actions["copy"][0].mods == ModWin);  // Cmd+C
     CHECK(mac.cfg.actions.count("snap-left") == 0);  // no macOS shortcut
 }
+
+TEST(macModifierNamesMeanTheSameModifiers) {
+    // cmd/command = win, option/opt = alt, control = ctrl, on every OS.
+    auto p = parse("cmd+option+control+shift+q = a\ncommand+opt+w = b\n");
+    for (const auto& e : p.errors) std::cerr << "  parse error: " << e << "\n";
+    CHECK(p.ok && p.errors.empty());
+    CHECK(findBinding(p.cfg.base.chords, ModWin | ModAlt | ModCtrl | ModShift, 'Q') != nullptr);
+    CHECK(findBinding(p.cfg.base.chords, ModWin | ModAlt, 'W') != nullptr);
+    CHECK(!parse("super+q = a\n").ok);  // still an unknown modifier
+}
