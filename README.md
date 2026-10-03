@@ -54,8 +54,8 @@ The GUI server only listens on localhost and rejects requests from other sites.
 - **Actions** tab: every built-in action, grouped by category, with its description and the keys it
   sends. Click **+ Shortcut** on one and press the keys (or tick modifiers and pick a key) to bind it;
   the keys the OS keeps for itself, like Alt+Tab, can't be recorded in a browser, so use the boxes.
-  **Remove shortcut** (or a chip's ×) removes only the combo; the action stays. **Change keys** changes
-  what an action sends (for example Undo sends `alt+z` instead of `ctrl+z`); **Reset keys** undoes that.
+  **Remove shortcut** (or a chip's ×) removes only the combo; the action stays. To change what an
+  action sends, define your own `[action <name>]` in the config; **Reset what it sends** drops it.
 - **Save** applies the change immediately, no restart needed.
 
 ## Config files
