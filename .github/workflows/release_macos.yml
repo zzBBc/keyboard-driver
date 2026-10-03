@@ -40,6 +40,7 @@ jobs:
           cp build/keymapper package/
           cp -r build/web package/web
           cp build/actions.macos.txt build/mappings.default.txt package/
+          cp INSTALL.md package/  # how to run the zip
 
       # python's zipfile module keeps the program's executable bit.
       - name: Zip the app

@@ -41,6 +41,7 @@ jobs:
           cp build/Release/keymapper.exe package/
           cp -r build/Release/web package/web
           cp build/Release/actions.windows.txt build/Release/mappings.default.txt package/
+          cp INSTALL.md package/  # how to run the zip
 
       # python's zipfile module writes portable (forward-slash) entries.
       - name: Zip the app
