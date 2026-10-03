@@ -1,0 +1,35 @@
+name: Build (Windows)
+description: Packages the Windows app as keymapper-windows.zip and uploads it as the "windows" artifact.
+
+# Composite action: the calling job runs on windows-latest and checks out the repo first. It runs the tests
+# (.github/actions/test-windows) before packaging, so nothing untested is released, and packages the
+# Release build the tests leave in build/. release.yml calls it.
+runs:
+  using: composite
+  steps:
+    - uses: ./.github/actions/test-windows
+
+    # The build leaves everything the app needs next to the exe (web/, actions.windows.txt,
+    # mappings.default.txt); pick just those, not the test binary or the static library.
+    - name: Collect the app
+      shell: bash
+      run: |
+        mkdir -p package
+        cp build/Release/keymapper.exe package/
+        cp -r build/Release/web package/web
+        cp build/Release/actions.windows.txt build/Release/mappings.default.txt package/
+        cp INSTALL.md package/  # how to run the zip
+
+    # python's zipfile module writes portable (forward-slash) entries.
+    - name: Zip the app
+      shell: bash
+      run: |
+        cd package
+        python -m zipfile -c ../keymapper-windows.zip *
+
+    - name: Upload the zip
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows
+        path: keymapper-windows.zip
+        if-no-files-found: error
