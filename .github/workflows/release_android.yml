@@ -1,0 +1,39 @@
+name: Release (Android)
+
+# Releases Android only, on a manual run. release.yml releases every OS at once (tag or manual run).
+# It builds the APK (.github/actions/build-android) and then publishes it (.github/actions/publish) to
+# release/android/<version>/ when there is a version, release/android/ when there is not.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version folder (for example v1.2.3). Leave empty to publish to release/android/'
+        required: false
+        default: ''
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-android
+
+  # Commit the built APK into the repo (this workflow only runs by hand).
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read  # the push uses the deploy key, not this token
+    concurrency:
+      group: publish-release  # one push at a time
+      cancel-in-progress: false
+    steps:
+      # The branch, not the tag: a tag checkout is detached and can't be pushed to.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}  # git pull and push go over SSH with this key
+      - uses: ./.github/actions/publish
+        with:
+          os: android
+          deploy-key: ${{ secrets.RELEASE_DEPLOY_KEY }}

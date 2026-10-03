@@ -1,7 +1,7 @@
 # Run the release zip
 
-The release zips are in the repository's `release/<os>/`: `keymapper-windows.zip` and
-`keymapper-macos.zip`. Each holds the program, `web/`, the built-in actions, the default config and
+The release builds are in the repository's `release/<os>/`: `keymapper-windows.zip` and
+`keymapper-macos.zip`, and `keymapper-android.apk` for Android tablets (see [Android](#android)). Each zip holds the program, `web/`, the built-in actions, the default config and
 this file.
 
 ## Windows
@@ -41,3 +41,12 @@ this file.
 
 A new release replaces the program, and macOS may ask for the permissions again. If remapping stops
 working after an update, remove the old entry with **-** in both lists and grant it again.
+
+## Android
+
+For a tablet with a hardware keyboard (Android 9 or newer). Details and limits: [android/README.md](android/README.md).
+
+1. Copy `release/android/keymapper-android.apk` to the tablet and open it. The APK is signed with a debug
+   key, so allow installing from this source when Android asks.
+2. Open **Keymapper**, tap **Open accessibility settings**, and turn on the **Keymapper** service.
+3. Open **Keymapper** again: the GUI appears. **Stop app** turns the service off.

@@ -1,0 +1,24 @@
+{
+  "rows": [
+    ["esc", 1, "f1", "f2", "f3", "f4", 0.5, "f5", "f6", "f7", "f8", 0.5, "f9", "f10", "f11", "f12", 0.5, "printscreen", "scrolllock", "pause"],
+    ["`", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", ["backspace", 2], 0.5, "insert", "home", "pageup"],
+    [["tab", 1.5], "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", ["\\", 1.5], 0.5, "delete", "end", "pagedown"],
+    [["capslock", 1.75], "a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'", ["enter", 2.25]],
+    [["lshift", 2.25], "z", "x", "c", "v", "b", "n", "m", ",", ".", "/", ["rshift", 2.75], 1.5, "up"],
+    [["lctrl", 1.25], ["lwin", 1.25], ["lalt", 1.25], ["space", 6.25], ["ralt", 1.25], ["rwin", 1.25], ["apps", 1.25], ["rctrl", 1.25], 0.5, "left", "down", "right"],
+    [],
+    [["volumedown", 1.5], ["volumeup", 1.5], ["mute", 1.5], ["playpause", 1.5], ["previoustrack", 1.5], ["nexttrack", 1.5], ["mediastop", 1.5]],
+    [["browserback", 1.5], ["browserforward", 1.5], ["browserhome", 1.5], ["browserrefresh", 1.5], ["launchmail", 1.5]]
+  ],
+  "labels": {
+    "esc": "Esc", "printscreen": "Shot", "scrolllock": "Power", "pause": "Lock", "backspace": "Bksp", "insert": "Ins",
+    "home": "Home", "pageup": "PgUp", "delete": "Del", "end": "End", "pagedown": "PgDn", "tab": "Tab", "capslock": "Caps",
+    "enter": "Enter", "lshift": "Shift", "rshift": "Shift", "lctrl": "Ctrl", "rctrl": "Ctrl", "lwin": "Meta", "rwin": "Meta",
+    "lalt": "Alt", "ralt": "Alt", "apps": "Recents", "space": "Space", "up": "↑", "down": "↓", "left": "←", "right": "→",
+    "volumeup": "Vol+", "volumedown": "Vol−", "mute": "Mute", "playpause": "Play", "nexttrack": "Next", "previoustrack": "Prev",
+    "mediastop": "Stop", "browserback": "Back", "browserforward": "Fwd", "browserrefresh": "Quick", "browserhome": "Desktop", "launchmail": "Notif"
+  },
+  "names": { "ctrl": "ctrl", "alt": "alt", "shift": "shift", "win": "win" },
+  "mods": { "ctrl": "Ctrl", "alt": "Alt", "shift": "Shift", "win": "Meta" },
+  "actionsNote": "(Android can only run system actions: Back, Home, Recents, Notifications, Quick settings, Power menu, Lock screen and Screenshot. A mapping that sends any other key is not applied.)"
+}

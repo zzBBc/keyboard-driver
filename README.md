@@ -1,9 +1,9 @@
 # Keymapper
 
-A key remapper for Windows and macOS with a browser GUI. Remap keys, define layers (hold a key to change what
+A key remapper for Windows, macOS and Android tablets with a browser GUI. Remap keys, define layers (hold a key to change what
 other keys do), bind key combos to ready-made actions, and give each physical keyboard its own config.
 
-To run a release zip instead of building, see [INSTALL.md](INSTALL.md).
+To run a release build instead of building, see [INSTALL.md](INSTALL.md). The Android app is in [android/](android/README.md).
 
 ## Build
 
