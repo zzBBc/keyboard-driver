@@ -28,6 +28,7 @@ void setReceiveTimeout(socket_t s, int ms) {
     DWORD t = static_cast<DWORD>(ms);
     setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&t), sizeof t);
 }
+void allowQuickRestart(socket_t) {}  // SO_REUSEADDR means something else (port hijacking) on Windows
 bool startNetworking() {
     WSADATA wsa;
     return WSAStartup(MAKEWORD(2, 2), &wsa) == 0;
@@ -48,6 +49,11 @@ void closeSocket(socket_t s) { close(s); }
 void setReceiveTimeout(socket_t s, int ms) {
     timeval t{ms / 1000, (ms % 1000) * 1000};
     setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &t, sizeof t);
+}
+// Lets a restarted copy bind the port while connections of the previous one are still closing (TIME_WAIT).
+void allowQuickRestart(socket_t s) {
+    int on = 1;
+    setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof on);
 }
 bool startNetworking() {
     signal(SIGPIPE, SIG_IGN);  // a browser that hangs up mid-reply must not kill the program
@@ -322,6 +328,7 @@ bool startServer(const ServerOptions& opts) {
 
     socket_t listener = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (listener == kInvalidSocket) return false;
+    allowQuickRestart(listener);
 
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
