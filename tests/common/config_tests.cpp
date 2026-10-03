@@ -266,8 +266,8 @@ TEST(shippedActionListsParse) {
     auto mac = parse(sourceFile("config/actions.macos.txt"));
     for (const auto& e : win.errors) std::cerr << "  actions.windows.txt: " << e << "\n";
     for (const auto& e : mac.errors) std::cerr << "  actions.macos.txt: " << e << "\n";
-    CHECK(win.ok && win.errors.empty() && win.cfg.actions.size() == 44);
-    CHECK(mac.ok && mac.errors.empty() && mac.cfg.actions.size() == 41);
+    CHECK(win.ok && win.errors.empty() && win.cfg.actions.size() == 49);
+    CHECK(mac.ok && mac.errors.empty() && mac.cfg.actions.size() == 45);
     for (const char* name : {"switch-window", "close-window", "task-view", "copy", "undo", "new-tab"})
         CHECK(win.cfg.actions.count(name) == 1 && mac.cfg.actions.count(name) == 1);
     CHECK(mac.cfg.actions["copy"].size() == 1 && mac.cfg.actions["copy"][0].mods == ModWin);  // Cmd+C
