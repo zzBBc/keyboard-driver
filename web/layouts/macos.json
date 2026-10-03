@@ -18,5 +18,5 @@
     "volumeup": "Vol+", "volumedown": "Vol−", "mute": "Mute", "playpause": "Play", "nexttrack": "Next", "previoustrack": "Prev"
   },
   "mods": { "ctrl": "Control", "alt": "Option", "shift": "Shift", "win": "Cmd" },
-  "actionsNote": "(macOS keeps some shortcuts, like Cmd+Tab, for itself; enter those with the boxes instead of recording. In the config, win is Command and alt is Option. The built-in actions send Windows shortcuts, so most of them mean something else on macOS: change their keys or bind your own.)"
+  "actionsNote": "(macOS keeps some shortcuts, like Cmd+Tab, for itself; enter those with the boxes instead of recording. In the config, win is Command and alt is Option.)"
 }

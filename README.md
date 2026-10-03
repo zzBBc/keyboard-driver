@@ -12,7 +12,7 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release
 ```
 
-The build copies `web/`, the built-in actions (`actions.txt`) and the default config
+The build copies `web/`, the built-in actions (`actions.windows.txt`, `actions.macos.txt`) and the default config
 (`mappings.default.txt`) next to the program: `build\Release\` on Windows, `build/` on macOS.
 
 ## Run
@@ -63,8 +63,9 @@ working after an update, remove the old entry with **-** in both lists and grant
 - Stop it with **Stop app**, Ctrl+C, or `pkill keymapper`. Starting it again stops the running copy,
   as on Windows.
 - Key names keep their Windows names: `win`/`lwin`/`rwin` is Command, `alt` is Option, `apps` is the
-  context-menu key, `insert` is Help. The built-in actions send Windows shortcuts (`win+d`,
-  `alt+f4`...), so most of them mean something else on macOS. Bind keys or your own actions there.
+  context-menu key, `insert` is Help. The built-in actions come from `config/actions.macos.txt`
+  and send Mac shortcuts (`win+w`, `ctrl+up`...) under the same names as on Windows, so a config
+  that binds `@close-window` works on both.
 - The GUI uses the Mac names (Control, Option, Cmd, Help, Delete) and a Mac keyboard layout, and
   leaves out the keys macOS has no code for. The config file still uses the names above.
 
@@ -91,7 +92,7 @@ working after an update, remove the old entry with **-** in both lists and grant
 |---|---|
 | `mappings.txt` (next to the exe) | the default: every keyboard without its own file |
 | `devices\<hardware id>.txt` | one specific keyboard, e.g. `devices\VID_048D&PID_C108.txt` |
-| `actions.txt` (next to the exe) | the built-in actions, copied from `config/actions.txt` on every build; do not edit this copy |
+| `actions.windows.txt` / `actions.macos.txt` (next to the exe) | the built-in actions for each OS (the program loads the one for the OS it runs on), copied from `config/` on every build; do not edit these copies |
 
 On first run `mappings.txt` is created from `mappings.default.txt` and never overwritten. Configs are
 edited by the GUI, or by hand (restart to pick up hand edits).
@@ -142,10 +143,10 @@ ctrl+c, ctrl+v               # steps run in order
 - `alt+q = none` removes the binding for that combo, including a default shortcut declared by a
   library action (a default is bound in Base unless your config binds or clears that combo). It does
   not block the key itself. In the GUI a default shows as a chip marked "(default)" and its ×
-  writes the `none` line. The shipped `config/actions.txt` declares no defaults at the moment.
+  writes the `none` line. The shipped action lists declare no defaults at the moment.
 - Defining an action with the same name as a built-in one in your config overrides it.
 
-**Built-in actions** (`config/actions.txt`) are 44 common shortcuts in five categories:
+**Built-in actions** (`config/actions.windows.txt` on Windows) are 44 common shortcuts in five categories:
 - *Windows and desktops:* `switch-window`, `previous-window`, `task-view`, `close-window`,
   `show-desktop`, `lock-screen`, `snap-left`, `next-desktop`, ...
 - *Media and browser:* `volume-up`, `volume-down`, `mute`, `play-pause`, `next-track`,
@@ -153,6 +154,11 @@ ctrl+c, ctrl+v               # steps run in order
 - *Launch:* `file-explorer`, `run-dialog`, `screenshot-region`, `emoji-picker`, `clipboard-history`.
 - *Editing:* `copy`, `cut`, `paste`, `undo`, `redo`, `select-all`, ...
 - *Tabs:* `next-tab`, `previous-tab`, `new-tab`, `close-tab`, `reopen-tab`.
+
+On macOS the list is `config/actions.macos.txt`: the same names with Mac shortcuts (`task-view` opens
+Mission Control, `run-dialog` opens Spotlight, `copy` sends `win+c`...), plus `next-app-window`,
+`quit-app`, `hide-app` and `screenshot-tool`. Actions macOS has no shortcut for (`snap-left`/`-right`,
+`new-desktop`, `clipboard-history`, `stop-media`, `browser-home`, `launch-mail`) are left out.
 
 None has a default shortcut. The GUI chooses actions from these lists and does not create new ones;
 to define your own, write an `[action ...]` block in the config file. The media actions send the same
@@ -228,7 +234,8 @@ The program is a portable core plus one small layer per operating system:
   modifier flags, media key events, which keyboard a key came from) are in `mac_input.cpp`, which
   uses no Apple API, so `tests/macos/` can test it without a keyboard tap.
 - `src/main.cpp`: loads configs, creates the engine, starts the server and the platform hook.
-- `config/`: `actions.txt` (the built-in actions) and `mappings.txt` (the default config).
+- `config/`: `actions.windows.txt` and `actions.macos.txt` (the built-in actions for each OS)
+  and `mappings.txt` (the default config).
 - `web/`: the GUI: `index.html`, `css/app.css` and plain scripts in `js/` loaded in order: `state`
   (shared state), `config` (parsing and validation), `keyboard` (keyboard picture and target
   picker), `actions` (Actions tab), `devices` (server calls), `app` (rendering and start-up).

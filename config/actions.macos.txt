@@ -1,0 +1,230 @@
+# Built-in actions for macOS, loaded by the program on macOS (actions.windows.txt on Windows). The
+# build copies this file next to the program; do not edit that copy (it is replaced on every build).
+# Bind one with "alt+q = @name" in any config, or define an action of the same name in your own
+# config to override it.
+#
+# Same names as the Windows actions, so a config binding @close-window works on both. Key names keep
+# their Windows names: win is Command, alt is Option, ctrl is Control. An action with no macOS
+# shortcut (snap-left, new-desktop, clipboard-history, the browser and mail keys...) is left out.
+#
+# [action name]
+# description: what it does
+# category: group name in the GUI (optional)
+# step, step        (each step is a key or combo; steps run in order)
+
+# --- Windows and desktops ---
+
+[action switch-window]
+description: Switch to the next app (hold Command to keep cycling)
+category: Windows and desktops
+win+tab
+
+[action previous-window]
+description: Switch to the previous app
+category: Windows and desktops
+win+shift+tab
+
+[action next-app-window]
+description: Switch to the next window of the current app
+category: Windows and desktops
+win+`
+
+[action task-view]
+description: Open Mission Control with all windows and desktops
+category: Windows and desktops
+ctrl+up
+
+[action close-window]
+description: Close the active window
+category: Windows and desktops
+win+w
+
+[action quit-app]
+description: Quit the active app
+category: Windows and desktops
+win+q
+
+[action hide-app]
+description: Hide the active app
+category: Windows and desktops
+win+h
+
+[action show-desktop]
+description: Show or hide the desktop
+category: Windows and desktops
+f11
+
+[action lock-screen]
+description: Lock the computer
+category: Windows and desktops
+ctrl+win+q
+
+[action task-manager]
+description: Open Force Quit Applications
+category: Windows and desktops
+win+alt+esc
+
+[action maximize-window]
+description: Enter or leave full screen
+category: Windows and desktops
+ctrl+win+f
+
+[action minimize-window]
+description: Minimize the window
+category: Windows and desktops
+win+m
+
+[action next-desktop]
+description: Switch to the next desktop (Space)
+category: Windows and desktops
+ctrl+right
+
+[action previous-desktop]
+description: Switch to the previous desktop (Space)
+category: Windows and desktops
+ctrl+left
+
+# --- Media and browser keys ---
+# The media actions send the same keys as a keyboard's media keys, so a combo of yours can stand in
+# for one. macOS has no browser keys, so the browser actions send the browsers' own shortcuts.
+
+[action volume-up]
+description: Raise the volume
+category: Media and browser
+volumeup
+
+[action volume-down]
+description: Lower the volume
+category: Media and browser
+volumedown
+
+[action mute]
+description: Mute or unmute
+category: Media and browser
+mute
+
+[action play-pause]
+description: Play or pause the current media
+category: Media and browser
+playpause
+
+[action next-track]
+description: Next track
+category: Media and browser
+nexttrack
+
+[action previous-track]
+description: Previous track
+category: Media and browser
+previoustrack
+
+[action browser-back]
+description: Browser back
+category: Media and browser
+win+[
+
+[action browser-forward]
+description: Browser forward
+category: Media and browser
+win+]
+
+[action browser-refresh]
+description: Refresh the page
+category: Media and browser
+win+r
+
+# --- Launch ---
+
+[action file-explorer]
+description: Open a Finder search window
+category: Launch
+win+alt+space
+
+[action run-dialog]
+description: Open Spotlight
+category: Launch
+win+space
+
+[action screenshot-region]
+description: Capture part of the screen
+category: Launch
+win+shift+4
+
+[action screenshot-tool]
+description: Open the Screenshot toolbar (capture or record)
+category: Launch
+win+shift+5
+
+[action emoji-picker]
+description: Open the emoji picker
+category: Launch
+ctrl+win+space
+
+# --- Editing ---
+
+[action copy]
+description: Copy the selection
+category: Editing
+win+c
+
+[action cut]
+description: Cut the selection
+category: Editing
+win+x
+
+[action paste]
+description: Paste
+category: Editing
+win+v
+
+[action paste-plain]
+description: Paste without formatting
+category: Editing
+win+alt+shift+v
+
+[action undo]
+description: Undo
+category: Editing
+win+z
+
+[action redo]
+description: Redo
+category: Editing
+win+shift+z
+
+[action select-all]
+description: Select everything
+category: Editing
+win+a
+
+[action duplicate-selection]
+description: Copy the selection and paste it right after
+category: Editing
+win+c, win+v
+
+# --- Tabs (browsers, editors) ---
+
+[action next-tab]
+description: Go to the next tab
+category: Tabs
+ctrl+tab
+
+[action previous-tab]
+description: Go to the previous tab
+category: Tabs
+ctrl+shift+tab
+
+[action new-tab]
+description: Open a new tab
+category: Tabs
+win+t
+
+[action close-tab]
+description: Close the current tab
+category: Tabs
+win+w
+
+[action reopen-tab]
+description: Reopen the last closed tab
+category: Tabs
+win+shift+t

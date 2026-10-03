@@ -237,7 +237,7 @@ function renderActions(p) {
   section('In your config file', userOnly);
   if (!builtin.length && !state.actions.length) {
     const e = document.createElement('div'); e.className = 'empty';
-    e.textContent = 'No actions found (actions.txt next to the program).';
+    e.textContent = 'No actions found (actions.windows.txt or actions.macos.txt next to the program).';
     p.appendChild(e);
   }
 }

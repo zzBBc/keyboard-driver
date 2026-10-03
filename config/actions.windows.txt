@@ -1,6 +1,7 @@
-# Built-in actions. Shipped next to the exe and shown in the GUI; do not edit the copy next to
-# the exe (it is replaced on every build). Bind one with "alt+q = @name" in any config, or
-# define an action of the same name in your own config to override it.
+# Built-in actions for Windows, loaded by the program on Windows (actions.macos.txt on macOS) and
+# shown in the GUI. The build copies this file next to the exe; do not edit that copy (it is
+# replaced on every build). Bind one with "alt+q = @name" in any config, or define an action of the
+# same name in your own config to override it. Keep the names in step with actions.macos.txt.
 #
 # [action name]
 # description: what it does

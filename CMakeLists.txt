@@ -39,7 +39,8 @@ else()
 endif()
 
 # Next to the exe: the GUI page, the built-in actions, and the default config used on first run.
-# (mappings.txt itself is never overwritten, since the GUI edits it.)
+# (mappings.txt itself is never overwritten, since the GUI edits it.) The built-in actions send
+# each OS's own shortcuts, so there is one list per OS; the program loads actions.<os>.txt.
 add_custom_command(TARGET keymapper POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_SOURCE_DIR}/web $<TARGET_FILE_DIR:keymapper>/web
@@ -47,8 +48,9 @@ add_custom_command(TARGET keymapper POST_BUILD
             ${CMAKE_SOURCE_DIR}/config/mappings.txt
             $<TARGET_FILE_DIR:keymapper>/mappings.default.txt
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${CMAKE_SOURCE_DIR}/config/actions.txt
-            $<TARGET_FILE_DIR:keymapper>/actions.txt)
+            ${CMAKE_SOURCE_DIR}/config/actions.windows.txt
+            ${CMAKE_SOURCE_DIR}/config/actions.macos.txt
+            $<TARGET_FILE_DIR:keymapper>)
 
 # Unit tests: build/Release/keymapper_tests.exe (also runnable via `ctest -C Release`).
 enable_testing()
@@ -62,6 +64,8 @@ add_executable(keymapper_tests
     tests/common/static_files_tests.cpp
 )
 target_include_directories(keymapper_tests PRIVATE tests)
+# So tests can read the shipped config files (config/actions*.txt).
+target_compile_definitions(keymapper_tests PRIVATE KEYMAPPER_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 target_link_libraries(keymapper_tests PRIVATE keymapper_core)
 if(APPLE)
     target_sources(keymapper_tests PRIVATE tests/macos/mac_input_tests.cpp src/platform/macos/mac_input.cpp)
