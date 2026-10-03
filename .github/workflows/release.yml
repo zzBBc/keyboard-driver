@@ -17,7 +17,7 @@ on:
 jobs:
   windows:
     uses: ./.github/workflows/release_windows.yml
-    secrets: inherit  # RELEASE_DEPLOY_KEY, for publish.yml
+    secrets: inherit  # RELEASE_DEPLOY_KEY, for the publish step
 
   macos:
     uses: ./.github/workflows/release_macos.yml
