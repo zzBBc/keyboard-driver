@@ -2,23 +2,47 @@ name: Release
 
 # Runs on a version tag (v1.2.3) or a manual run. A plain push to a branch (master included) does not
 # start it, and pull requests have their own workflow (pr.yml).
-# It runs release_windows.yml and release_macos.yml side by side: each tests, packages and publishes its
-# own OS, so one failing does not hold back the other. To release one OS only, run that workflow by hand.
+# It tests and packages Windows and macOS side by side (one failing stops the release), then publishes
+# both zips in a single commit to release/<os>/<version>/ when there is a version, release/<os>/ when
+# there is not.
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
     inputs:
-      version:  # the called workflows read it from this run's inputs
+      version:
         description: 'Version folder (for example v1.2.3). Leave empty to publish to release/<os>/'
         required: false
         default: ''
 
 jobs:
-  windows:
-    uses: ./.github/workflows/release_windows.yml
-    secrets: inherit  # RELEASE_DEPLOY_KEY, for publish.yml
+  build_windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-windows
 
-  macos:
-    uses: ./.github/workflows/release_macos.yml
-    secrets: inherit
+  build_macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-macos
+
+  # Commit both built zips into the repo with one push.
+  publish:
+    needs: [build_windows, build_macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read  # the push uses the deploy key, not this token
+    concurrency:
+      group: publish-release  # one push at a time
+      cancel-in-progress: false
+    steps:
+      # The branch, not the tag: a tag checkout is detached and can't be pushed to.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}  # git pull and push go over SSH with this key
+      - uses: ./.github/actions/publish
+        with:
+          deploy-key: ${{ secrets.RELEASE_DEPLOY_KEY }}

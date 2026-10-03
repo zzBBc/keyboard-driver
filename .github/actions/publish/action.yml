@@ -1,0 +1,94 @@
+name: Publish
+description: Commits the built zip of one OS, or of every OS, back to the default branch, in release/<os>/[<version>/].
+
+# Composite action: the calling job runs on ubuntu-latest and has the default branch checked out with
+# the deploy key (`ssh-key`), because a local action can only be used once the repo is checked out.
+# It publishes the artifact named after the os, or every artifact of the run (one per os) when no os is
+# given: release/<os>/<version>/ when there is a version, release/<os>/ when there is not.
+# release.yml (both OSes, one commit) and release_windows.yml / release_macos.yml (one OS) call it, so it
+# runs with their trigger (tag or manual run).
+inputs:
+  os:
+    description: 'The artifact to publish (windows, macos). Leave empty to publish every artifact'
+    required: false
+    default: ''
+  deploy-key:
+    description: 'The private half of the deploy key (RELEASE_DEPLOY_KEY), a secret the caller passes in'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # master requires the PR check, and the built-in GITHUB_TOKEN can't be allowed to bypass that on a
+    # personal repository. A deploy key can: it is an SSH key for this repository only, with write
+    # access, and it is on the bypass list of the "master requires the PR check" ruleset. Its private
+    # half is the repository secret RELEASE_DEPLOY_KEY.
+    - name: Check the deploy key
+      shell: bash
+      env:
+        KEY: ${{ inputs.deploy-key }}
+      run: |
+        if [[ -z "$KEY" ]]; then
+          echo "The repository secret RELEASE_DEPLOY_KEY is not set, so the release can't be pushed to master." >&2
+          echo "It holds the private key of a write-enabled deploy key (Settings > Deploy keys)." >&2
+          exit 1
+        fi
+
+    - name: Work out the version (may be empty)
+      id: version
+      shell: bash
+      env:
+        INPUT_VERSION: ${{ github.event.inputs.version }}  # via env, never pasted into the script
+      run: |
+        if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+          version="$INPUT_VERSION"
+        else
+          version="${GITHUB_REF#refs/tags/}"
+        fi
+        # a version becomes a folder name: keep it to a plain, safe string
+        if [[ -n "$version" && ( ! "$version" =~ ^[A-Za-z0-9._-]+$ || "$version" == .* ) ]]; then
+          echo "Invalid version '$version'" >&2
+          exit 1
+        fi
+        echo "value=$version" >> "$GITHUB_OUTPUT"
+
+    - name: Download the build
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.os }}
+        path: staging/${{ inputs.os }}  # one sub-folder per artifact, named after the os
+
+    - name: Place the zips in release/<os>/[<version>/]
+      shell: bash
+      env:
+        VERSION: ${{ steps.version.outputs.value }}
+      run: |
+        for osdir in staging/*/; do
+          os="$(basename "$osdir")"
+          dest="release/$os"
+          [[ -n "$VERSION" ]] && dest="$dest/$VERSION"
+          mkdir -p "$dest"
+          # keymapper-<os>.zip, or keymapper-<os>-<version>.zip. Only this file is replaced, so
+          # publishing without a version leaves the version folders inside release/<os>/ alone.
+          cp "${osdir}keymapper-$os.zip" "$dest/keymapper-$os${VERSION:+-$VERSION}.zip"
+          echo "published $os to $dest/keymapper-$os${VERSION:+-$VERSION}.zip"
+        done
+
+    - name: Commit and push
+      shell: bash
+      env:
+        VERSION: ${{ steps.version.outputs.value }}
+        BRANCH: ${{ github.event.repository.default_branch }}
+        OS: ${{ inputs.os }}
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add -A release
+        if git diff --cached --quiet; then
+          echo "release/ is already up to date"
+          exit 0
+        fi
+        if [[ -n "$VERSION" ]]; then message="chore: add release $VERSION builds${OS:+ ($OS)}"; else message="chore: update release builds${OS:+ ($OS)}"; fi
+        git commit -m "$message"
+        git pull --rebase origin "$BRANCH"
+        git push origin "HEAD:$BRANCH"

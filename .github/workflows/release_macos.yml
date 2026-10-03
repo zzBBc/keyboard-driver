@@ -1,11 +1,10 @@
 name: Release (macOS)
 
-# Reusable: release.yml calls it next to release_windows.yml on a version tag (v1.2.3) or a manual
-# run of both. A manual run of this workflow releases macOS only.
-# It runs the macOS build and tests (test_macos.yml), packages the app as a zip, and then publishes it
-# (publish.yml) to release/macos/<version>/ when there is a version, release/macos/ when there is not.
+# Releases macOS only, on a manual run. release.yml releases both OSes at once (tag or manual run).
+# It builds macOS (.github/actions/build-macos: tests, then a zip) and then publishes it
+# (.github/actions/publish) to release/macos/<version>/ when there is a version, release/macos/ when there
+# is not.
 on:
-  workflow_call:
   workflow_dispatch:
     inputs:
       version:
@@ -14,52 +13,28 @@ on:
         default: ''
 
 jobs:
-  test:
-    uses: ./.github/workflows/test_macos.yml
-
-  # Build once more, only to package: test_macos.yml does not leave anything behind.
-  package:
-    needs: test
+  build:
     runs-on: macos-latest
-
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-macos
 
-      # Makefiles are single-config: the build type is picked here, not at build time.
-      - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-
-      - name: Build (Release)
-        run: cmake --build build
-
-      # The build leaves everything the app needs next to the program (web/, actions.macos.txt,
-      # mappings.default.txt); pick just those, not the test binary or the static library.
-      - name: Collect the app
-        run: |
-          mkdir -p package
-          cp build/keymapper package/
-          cp -r build/web package/web
-          cp build/actions.macos.txt build/mappings.default.txt package/
-          cp INSTALL.md package/  # how to run the zip
-
-      # python's zipfile module keeps the program's executable bit.
-      - name: Zip the app
-        run: |
-          cd package
-          python3 -m zipfile -c ../keymapper-macos.zip *
-
-      - name: Upload the zip
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos
-          path: keymapper-macos.zip
-          if-no-files-found: error
-
-  # Commit the built zip into the repo (this workflow only runs for a version tag or a manual run).
+  # Commit the built zip into the repo (this workflow only runs by hand).
   publish:
-    needs: package
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/publish.yml
-    with:
-      os: macos
-    secrets: inherit
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read  # the push uses the deploy key, not this token
+    concurrency:
+      group: publish-release  # one push at a time
+      cancel-in-progress: false
+    steps:
+      # The branch, not the tag: a tag checkout is detached and can't be pushed to.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}  # git pull and push go over SSH with this key
+      - uses: ./.github/actions/publish
+        with:
+          os: macos
+          deploy-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
