@@ -22,34 +22,39 @@ if(ANDROID)
     # packaged as app assets by Gradle instead of being copied next to the program.
     add_library(keymapper SHARED src/main.cpp src/server/server.cpp)
     set_source_files_properties(src/main.cpp PROPERTIES COMPILE_DEFINITIONS main=keymapper_main)
-else()
+elseif(WIN32 OR APPLE)
     add_executable(keymapper src/main.cpp src/server/server.cpp)
-endif()
-target_include_directories(keymapper PRIVATE src/server src/platform)
-target_link_libraries(keymapper PRIVATE keymapper_core)
-
-if(ANDROID)
-    target_sources(keymapper PRIVATE src/platform/android/android_platform.cpp src/platform/android/android_input.cpp)
-    target_include_directories(keymapper PRIVATE src/platform/android)
-elseif(WIN32)
-    target_sources(keymapper PRIVATE src/platform/windows/windows_platform.cpp)
-    target_compile_definitions(keymapper PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-    target_link_libraries(keymapper PRIVATE ws2_32 hid shell32)
-elseif(APPLE)
-    enable_language(OBJCXX)  # the layer uses AppKit for media keys and opening the browser
-    target_sources(keymapper PRIVATE src/platform/macos/macos_platform.mm src/platform/macos/mac_input.cpp)
-    target_include_directories(keymapper PRIVATE src/platform/macos)
-    target_link_libraries(keymapper PRIVATE
-        "-framework ApplicationServices" "-framework IOKit" "-framework CoreFoundation" "-framework AppKit")
 else()
-    message(FATAL_ERROR "There is no platform layer for this OS yet. Add src/platform/<os>/ "
-                        "implementing src/platform/platform.h and list it here.")
+    # No platform layer for this OS yet (Linux): there is no program, but the core and the tests build, which
+    # is how CI runs them on Linux (the Android layer's decisions, tests/android/, need no Android).
+    # To port the program, add src/platform/<os>/ implementing src/platform/platform.h and list it here.
+    message(STATUS "There is no platform layer for this OS: building only keymapper_core and the tests.")
+endif()
+
+if(TARGET keymapper)
+    target_include_directories(keymapper PRIVATE src/server src/platform)
+    target_link_libraries(keymapper PRIVATE keymapper_core)
+
+    if(ANDROID)
+        target_sources(keymapper PRIVATE src/platform/android/android_platform.cpp src/platform/android/android_input.cpp)
+        target_include_directories(keymapper PRIVATE src/platform/android)
+    elseif(WIN32)
+        target_sources(keymapper PRIVATE src/platform/windows/windows_platform.cpp)
+        target_compile_definitions(keymapper PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+        target_link_libraries(keymapper PRIVATE ws2_32 hid shell32)
+    elseif(APPLE)
+        enable_language(OBJCXX)  # the layer uses AppKit for media keys and opening the browser
+        target_sources(keymapper PRIVATE src/platform/macos/macos_platform.mm src/platform/macos/mac_input.cpp)
+        target_include_directories(keymapper PRIVATE src/platform/macos)
+        target_link_libraries(keymapper PRIVATE
+            "-framework ApplicationServices" "-framework IOKit" "-framework CoreFoundation" "-framework AppKit")
+    endif()
 endif()
 
 # Next to the exe: the GUI page, the built-in actions, and the default config used on first run.
 # (mappings.txt itself is never overwritten, since the GUI edits it.) The built-in actions send
 # each OS's own shortcuts, so there is one list per OS; the program loads actions.<os>.txt.
-if(NOT ANDROID)
+if(TARGET keymapper AND NOT ANDROID)
 add_custom_command(TARGET keymapper POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_SOURCE_DIR}/web $<TARGET_FILE_DIR:keymapper>/web
