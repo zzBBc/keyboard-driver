@@ -27,6 +27,12 @@ if(WIN32)
     target_sources(keymapper PRIVATE src/platform/windows/windows_platform.cpp)
     target_compile_definitions(keymapper PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
     target_link_libraries(keymapper PRIVATE ws2_32 hid shell32)
+elseif(APPLE)
+    enable_language(OBJCXX)  # the layer uses AppKit for media keys and opening the browser
+    target_sources(keymapper PRIVATE src/platform/macos/macos_platform.mm src/platform/macos/mac_input.cpp)
+    target_include_directories(keymapper PRIVATE src/platform/macos)
+    target_link_libraries(keymapper PRIVATE
+        "-framework ApplicationServices" "-framework IOKit" "-framework CoreFoundation" "-framework AppKit")
 else()
     message(FATAL_ERROR "There is no platform layer for this OS yet. Add src/platform/<os>/ "
                         "implementing src/platform/platform.h and list it here.")
@@ -46,14 +52,19 @@ add_custom_command(TARGET keymapper POST_BUILD
 
 # Unit tests: build/Release/keymapper_tests.exe (also runnable via `ctest -C Release`).
 enable_testing()
+# tests/common/ runs on every OS; tests/<os>/ covers one platform layer and runs on that OS only.
 add_executable(keymapper_tests
     tests/main.cpp
-    tests/config_tests.cpp
-    tests/matcher_tests.cpp
-    tests/keys_tests.cpp
-    tests/engine_tests.cpp
-    tests/static_files_tests.cpp
+    tests/common/config_tests.cpp
+    tests/common/matcher_tests.cpp
+    tests/common/keys_tests.cpp
+    tests/common/engine_tests.cpp
+    tests/common/static_files_tests.cpp
 )
 target_include_directories(keymapper_tests PRIVATE tests)
 target_link_libraries(keymapper_tests PRIVATE keymapper_core)
+if(APPLE)
+    target_sources(keymapper_tests PRIVATE tests/macos/mac_input_tests.cpp src/platform/macos/mac_input.cpp)
+    target_include_directories(keymapper_tests PRIVATE src/platform/macos)
+endif()
 add_test(NAME keymapper_tests COMMAND keymapper_tests)

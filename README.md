@@ -1,24 +1,25 @@
 # Keymapper
 
-A key remapper for Windows with a browser GUI. Remap keys, define layers (hold a key to change what
+A key remapper for Windows and macOS with a browser GUI. Remap keys, define layers (hold a key to change what
 other keys do), bind key combos to ready-made actions, and give each physical keyboard its own config.
 
 ## Build
 
-Requires Windows, CMake 3.16+ and a C++17 compiler (MSVC).
+Requires CMake 3.16+ and a C++17 compiler: MSVC on Windows, Xcode or its Command Line Tools on macOS.
 
 ```
-cmake -S . -B build
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release
 ```
 
 The build copies `web/`, the built-in actions (`actions.txt`) and the default config
-(`mappings.default.txt`) next to the exe in `build\Release\`.
+(`mappings.default.txt`) next to the program: `build\Release\` on Windows, `build/` on macOS.
 
 ## Run
 
 ```
-build\Release\keymapper.exe [config-path] [port]
+build\Release\keymapper.exe [config-path] [port]     # Windows
+build/keymapper [config-path] [port]                  # macOS
 ```
 
 It opens http://127.0.0.1:8765 (the default port) in your default browser. A global keyboard hook is active while it runs,
@@ -29,6 +30,20 @@ To stop it, click **Stop app** in the GUI's bottom bar (or press Ctrl+C in its c
 running copy and takes over its port and hook.
 
 The GUI server only listens on localhost and rejects requests from other sites.
+
+### macOS
+
+- On first start macOS asks for two permissions in **System Settings > Privacy & Security**:
+  **Accessibility** (to intercept and send keys) and **Input Monitoring** (to tell keyboards apart).
+  When you start it from a terminal, the permissions belong to the terminal app. Restart keymapper
+  after granting them. Without Input Monitoring every keyboard uses the default config.
+- Stop it with **Stop app**, Ctrl+C, or `pkill keymapper`. Starting it again stops the running copy,
+  as on Windows.
+- The release zip is not signed. If macOS refuses to open it, run
+  `xattr -d com.apple.quarantine keymapper` in the unzipped folder.
+- Key names keep their Windows names: `win`/`lwin`/`rwin` is Command, `alt` is Option, `apps` is the
+  context-menu key, `insert` is Help. The built-in actions send Windows shortcuts (`win+d`,
+  `alt+f4`...), so most of them mean something else on macOS. Bind keys or your own actions there.
 
 ## Using the GUI
 
@@ -146,13 +161,20 @@ events are matched to hook events by scan code and timing.
   prompts or the login screen.
 - No numpad key names yet. Names follow Windows virtual-key codes, so punctuation names refer to the
   key positions of a US layout.
-- Only the Windows platform layer exists today.
+- macOS: macOS toggles Caps Lock before any program sees the key, so plain mappings to or from
+  Caps Lock (`capslock = tab`, `tab = capslock`) are handed to the HID system with `hidutil`
+  instead. They apply to every keyboard, only work in the default config, and replace any mapping
+  you set with `hidutil` yourself; quitting keymapper clears them (after a crash, run
+  `hidutil property --set '{"UserKeyMapping":[]}'` or restart). Caps Lock can't be a layer key,
+  and Fn can't be remapped. PrintScreen, ScrollLock, Pause, F21-F24, `mediastop` and the
+  browser and mail keys have no macOS key, so they are never seen and sending them does nothing.
+- There is no Linux platform layer yet.
 
 ## Tests
 
 ```
 cmake --build build --config Release --target keymapper_tests
-build\Release\keymapper_tests.exe
+build\Release\keymapper_tests.exe     # Windows; build/keymapper_tests on macOS
 ```
 
 The GUI's logic (config parsing, chords, actions, shortcuts) has its own tests, which need Node.js:
@@ -176,15 +198,21 @@ The program is a portable core plus one small layer per operating system:
 - `src/platform/platform.h`: what the program needs from the OS (find the install folder, list
   keyboards, intercept keys and inject the engine's output).
   `src/platform/windows/windows_platform.cpp` implements it with a low-level keyboard hook, Raw
-  Input (to tell keyboards apart) and `SendInput`.
+  Input (to tell keyboards apart) and `SendInput`. `src/platform/macos/macos_platform.mm` implements
+  it with a Quartz event tap, IOHIDManager (to tell keyboards apart) and `CGEventPost`, and AppKit
+  for the media keys and opening the browser. Its decisions (macOS key codes to portable ids,
+  modifier flags, media key events, which keyboard a key came from) are in `mac_input.cpp`, which
+  uses no Apple API, so `tests/macos/` can test it without a keyboard tap.
 - `src/main.cpp`: loads configs, creates the engine, starts the server and the platform hook.
 - `config/`: `actions.txt` (the built-in actions) and `mappings.txt` (the default config).
 - `web/`: the GUI: `index.html`, `css/app.css` and plain scripts in `js/` loaded in order: `state`
   (shared state), `config` (parsing and validation), `keyboard` (keyboard picture and target
   picker), `actions` (Actions tab), `devices` (server calls), `app` (rendering and start-up).
-- `tests/`: C++ tests, one file per area (`config_`, `matcher_`, `keys_`, `engine_`,
-  `static_files_tests.cpp`) on a tiny shared harness (`harness.h`: write `TEST(name) { CHECK(...); }`
-  and it registers itself); `tests/web/` has the GUI logic tests (Node).
+- `tests/`: C++ tests, one file per area, on a tiny shared harness (`harness.h`: write
+  `TEST(name) { CHECK(...); }` and it registers itself). `tests/common/` (`config_`, `matcher_`,
+  `keys_`, `engine_`, `static_files_tests.cpp`) runs on every OS; `tests/macos/`
+  (`mac_input_tests.cpp`) and `tests/windows/` cover a platform layer and are built on that OS
+  only. `tests/web/` has the GUI logic tests (Node).
 
-To port to another OS (for example macOS), add `src/platform/<os>/` implementing `platform.h` and
+To port to another OS (for example Linux), add `src/platform/<os>/` implementing `platform.h` and
 list it in `CMakeLists.txt`. Nothing in `core/`, `server/`, `web/` or the config format changes.

@@ -1,0 +1,64 @@
+name: Release (macOS)
+
+# Reusable: release.yml calls it next to release_windows.yml on a version tag (v1.2.3) or a manual
+# run of both. A manual run of this workflow releases macOS only.
+# It runs the macOS build and tests (test_macos.yml), packages the app as a zip, and then publishes it
+# (publish.yml) to release/macos/<version>/ when there is a version, release/macos/ when there is not.
+on:
+  workflow_call:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version folder (for example v1.2.3). Leave empty to publish to release/macos/'
+        required: false
+        default: ''
+
+jobs:
+  test:
+    uses: ./.github/workflows/test_macos.yml
+
+  # Build once more, only to package: test_macos.yml does not leave anything behind.
+  package:
+    needs: test
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Makefiles are single-config: the build type is picked here, not at build time.
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build (Release)
+        run: cmake --build build
+
+      # The build leaves everything the app needs next to the program (web/, actions.txt,
+      # mappings.default.txt); pick just those, not the test binary or the static library.
+      - name: Collect the app
+        run: |
+          mkdir -p package
+          cp build/keymapper package/
+          cp -r build/web package/web
+          cp build/actions.txt build/mappings.default.txt package/
+
+      # python's zipfile module keeps the program's executable bit.
+      - name: Zip the app
+        run: |
+          cd package
+          python3 -m zipfile -c ../keymapper-macos.zip *
+
+      - name: Upload the zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: keymapper-macos.zip
+          if-no-files-found: error
+
+  # Commit the built zip into the repo (this workflow only runs for a version tag or a manual run).
+  publish:
+    needs: package
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/publish.yml
+    with:
+      os: macos
+    secrets: inherit

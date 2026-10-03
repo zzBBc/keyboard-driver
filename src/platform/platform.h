@@ -1,10 +1,11 @@
 #pragma once
 // What the program needs from the operating system. Each supported OS provides one implementation of
-// this (platform/windows/ today). Everything else (config, engine, server, GUI) is portable.
+// this (platform/windows/, platform/macos/). Everything else (config, engine, server, GUI) is portable.
 #include <string>
 #include <vector>
 
 class Engine;
+struct Config;
 
 struct KeyboardInfo {
     std::string id;    // hardware id, same format as the device config file names
@@ -29,6 +30,11 @@ bool takeOverFromRunningInstance();
 
 // Opens `url` in the user's default browser. Returns false if it could not be launched.
 bool openUrl(const std::string& url);
+
+// Called with each config before the engine gets it (deviceId "" = the default config). The layer may
+// carry out some mappings itself, below its hook, and remove them from `cfg` (macOS: Caps Lock ones).
+// Safe to call from any thread.
+void adoptConfig(const std::string& deviceId, Config& cfg);
 
 // Ask the running keyboard hook to stop, so runHook() returns. Safe to call from any thread, and
 // before runHook() has started (then it returns as soon as it starts).

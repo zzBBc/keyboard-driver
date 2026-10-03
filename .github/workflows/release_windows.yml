@@ -1,0 +1,66 @@
+name: Release (Windows)
+
+# Reusable: release.yml calls it next to release_macos.yml on a version tag (v1.2.3) or a manual
+# run of both. A manual run of this workflow releases Windows only.
+# It runs the Windows build and tests (test_windows.yml), packages the app as a zip, and then publishes
+# it (publish.yml) to release/windows/<version>/ when there is a version, release/windows/ when there
+# is not.
+on:
+  workflow_call:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version folder (for example v1.2.3). Leave empty to publish to release/windows/'
+        required: false
+        default: ''
+
+jobs:
+  test:
+    uses: ./.github/workflows/test_windows.yml
+
+  # Build once more, only to package: test_windows.yml does not leave anything behind.
+  package:
+    needs: test
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build
+
+      - name: Build (Release)
+        run: cmake --build build --config Release
+
+      # The build leaves everything the app needs next to the exe (web/, actions.txt,
+      # mappings.default.txt); pick just those, not the test binary or the static library.
+      - name: Collect the app
+        shell: bash
+        run: |
+          mkdir -p package
+          cp build/Release/keymapper.exe package/
+          cp -r build/Release/web package/web
+          cp build/Release/actions.txt build/Release/mappings.default.txt package/
+
+      # python's zipfile module writes portable (forward-slash) entries.
+      - name: Zip the app
+        shell: bash
+        run: |
+          cd package
+          python -m zipfile -c ../keymapper-windows.zip *
+
+      - name: Upload the zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: keymapper-windows.zip
+          if-no-files-found: error
+
+  # Commit the built zip into the repo (this workflow only runs for a version tag or a manual run).
+  publish:
+    needs: package
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/publish.yml
+    with:
+      os: windows
+    secrets: inherit

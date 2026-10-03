@@ -51,6 +51,7 @@ int main(int argc, char** argv) {
     std::vector<std::string> errors;
     if (!parseConfig(text, *cfg, errors, library.get()))
         for (const auto& e : errors) std::cerr << opts.configPath << ": " << e << "\n";
+    platform::adoptConfig("", *cfg);
     engine.setConfig("", cfg);
 
     // Per-keyboard configs: devices\<hardware id>.txt
@@ -65,6 +66,7 @@ int main(int argc, char** argv) {
         if (!validDeviceId(id) || !readFile(path, devText)) continue;
         if (!parseConfig(devText, *devCfg, devErrors, library.get()))
             for (const auto& e : devErrors) std::cerr << path << ": " << e << "\n";
+        platform::adoptConfig(id, *devCfg);
         engine.setConfig(id, devCfg);
         std::cout << "Keyboard config: " << id << "\n";
     }

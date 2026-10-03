@@ -1,0 +1,103 @@
+name: Publish
+
+# Reusable: commits one OS's zip (the artifact named after the os, from the calling workflow's package
+# job) back to the default branch: release/<os>/<version>/ when there is a version, release/<os>/ when
+# there is not. release_windows.yml and release_macos.yml call it with `secrets: inherit`, so it runs
+# with their trigger (tag or manual run) and their RELEASE_DEPLOY_KEY.
+on:
+  workflow_call:
+    inputs:
+      os:
+        description: 'The artifact to publish (windows, macos)'
+        required: true
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read  # the push below uses the deploy key, not this token
+    concurrency:
+      group: publish-release  # one push at a time
+      cancel-in-progress: false
+
+    steps:
+      # master requires the PR check, and the built-in GITHUB_TOKEN can't be allowed to bypass that on a
+      # personal repository. A deploy key can: it is an SSH key for this repository only, with write
+      # access, and it is on the bypass list of the "master requires the PR check" ruleset. Its private
+      # half is the repository secret RELEASE_DEPLOY_KEY.
+      - name: Check the deploy key
+        shell: bash
+        env:
+          KEY: ${{ secrets.RELEASE_DEPLOY_KEY }}
+        run: |
+          if [[ -z "$KEY" ]]; then
+            echo "The repository secret RELEASE_DEPLOY_KEY is not set, so the release can't be pushed to master." >&2
+            echo "It holds the private key of a write-enabled deploy key (Settings > Deploy keys)." >&2
+            exit 1
+          fi
+
+      - name: Work out the version (may be empty)
+        id: version
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}  # via env, never pasted into the script
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            version="$INPUT_VERSION"
+          else
+            version="${GITHUB_REF#refs/tags/}"
+          fi
+          # a version becomes a folder name: keep it to a plain, safe string
+          if [[ -n "$version" && ( ! "$version" =~ ^[A-Za-z0-9._-]+$ || "$version" == .* ) ]]; then
+            echo "Invalid version '$version'" >&2
+            exit 1
+          fi
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+
+      # The branch, not the tag: a tag checkout is detached and can't be pushed to.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}  # git pull and push below go over SSH with this key
+
+      - name: Download the build
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.os }}
+          path: staging/${{ inputs.os }}  # one sub-folder, named after the os
+
+      - name: Place the zips in release/<os>/[<version>/]
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          for osdir in staging/*/; do
+            os="$(basename "$osdir")"
+            dest="release/$os"
+            [[ -n "$VERSION" ]] && dest="$dest/$VERSION"
+            mkdir -p "$dest"
+            # keymapper-<os>.zip, or keymapper-<os>-<version>.zip. Only this file is replaced, so
+            # publishing without a version leaves the version folders inside release/<os>/ alone.
+            cp "${osdir}keymapper-$os.zip" "$dest/keymapper-$os${VERSION:+-$VERSION}.zip"
+            echo "published $os to $dest/keymapper-$os${VERSION:+-$VERSION}.zip"
+          done
+
+      - name: Commit and push
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+          BRANCH: ${{ github.event.repository.default_branch }}
+          OS: ${{ inputs.os }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A release
+          if git diff --cached --quiet; then
+            echo "release/ is already up to date"
+            exit 0
+          fi
+          if [[ -n "$VERSION" ]]; then message="chore: add release $VERSION builds ($OS)"; else message="chore: update release builds ($OS)"; fi
+          git commit -m "$message"
+          git pull --rebase origin "$BRANCH"
+          git push origin "HEAD:$BRANCH"

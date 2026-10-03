@@ -2,155 +2,23 @@ name: Release
 
 # Runs on a version tag (v1.2.3) or a manual run. A plain push to a branch (master included) does not
 # start it, and pull requests have their own workflow (pr.yml).
-# It runs the shared build and tests (test.yml), packages the app as a zip, and then publishes it by
-# committing it back to the default branch: release/<os>/<version>/ when there is a version,
-# release/<os>/ when there is not.
+# It runs release_windows.yml and release_macos.yml side by side: each tests, packages and publishes its
+# own OS, so one failing does not hold back the other. To release one OS only, run that workflow by hand.
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
     inputs:
-      version:
+      version:  # the called workflows read it from this run's inputs
         description: 'Version folder (for example v1.2.3). Leave empty to publish to release/<os>/'
         required: false
         default: ''
 
 jobs:
-  test:
-    uses: ./.github/workflows/test.yml
+  windows:
+    uses: ./.github/workflows/release_windows.yml
+    secrets: inherit  # RELEASE_DEPLOY_KEY, for publish.yml
 
-  # Build once more, only to package: test.yml does not leave anything behind.
-  package:
-    needs: test
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows
-            runner: windows-latest
-          # Add macos / linux here (and in test.yml) once src/platform/<os>/ exists.
-    runs-on: ${{ matrix.runner }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure
-        run: cmake -S . -B build
-
-      - name: Build (Release)
-        run: cmake --build build --config Release
-
-      # The build leaves everything the app needs next to the exe (web/, actions.txt,
-      # mappings.default.txt); pick just those, not the test binary or the static library.
-      - name: Collect the app
-        shell: bash
-        run: |
-          mkdir -p package
-          cp build/Release/keymapper.exe package/
-          cp -r build/Release/web package/web
-          cp build/Release/actions.txt build/Release/mappings.default.txt package/
-
-      # One zip per OS. python's zipfile module is on every runner and writes the same portable
-      # (forward-slash) entries everywhere.
-      - name: Zip the app
-        shell: bash
-        run: |
-          cd package
-          python -m zipfile -c "../keymapper-${{ matrix.os }}.zip" *
-
-      - name: Upload the zip
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.os }}
-          path: keymapper-${{ matrix.os }}.zip
-          if-no-files-found: error
-
-  # Commit the built zips into the repo (this workflow only runs for a version tag or a manual run).
-  publish:
-    needs: package
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read  # the push below uses the deploy key, not this token
-    concurrency:
-      group: publish-release  # one push at a time
-      cancel-in-progress: false
-
-    steps:
-      # master requires the PR check, and the built-in GITHUB_TOKEN can't be allowed to bypass that on a
-      # personal repository. A deploy key can: it is an SSH key for this repository only, with write
-      # access, and it is on the bypass list of the "master requires the PR check" ruleset. Its private
-      # half is the repository secret RELEASE_DEPLOY_KEY.
-      - name: Check the deploy key
-        shell: bash
-        env:
-          KEY: ${{ secrets.RELEASE_DEPLOY_KEY }}
-        run: |
-          if [[ -z "$KEY" ]]; then
-            echo "The repository secret RELEASE_DEPLOY_KEY is not set, so the release can't be pushed to master." >&2
-            echo "It holds the private key of a write-enabled deploy key (Settings > Deploy keys)." >&2
-            exit 1
-          fi
-
-      - name: Work out the version (may be empty)
-        id: version
-        shell: bash
-        env:
-          INPUT_VERSION: ${{ github.event.inputs.version }}  # via env, never pasted into the script
-        run: |
-          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
-            version="$INPUT_VERSION"
-          else
-            version="${GITHUB_REF#refs/tags/}"
-          fi
-          # a version becomes a folder name: keep it to a plain, safe string
-          if [[ -n "$version" && ( ! "$version" =~ ^[A-Za-z0-9._-]+$ || "$version" == .* ) ]]; then
-            echo "Invalid version '$version'" >&2
-            exit 1
-          fi
-          echo "value=$version" >> "$GITHUB_OUTPUT"
-
-      # The branch, not the tag: a tag checkout is detached and can't be pushed to.
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.repository.default_branch }}
-          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}  # git pull and push below go over SSH with this key
-
-      - name: Download the builds
-        uses: actions/download-artifact@v4
-        with:
-          path: staging  # one sub-folder per artifact, named after the os
-
-      - name: Place the zips in release/<os>/[<version>/]
-        shell: bash
-        env:
-          VERSION: ${{ steps.version.outputs.value }}
-        run: |
-          for osdir in staging/*/; do
-            os="$(basename "$osdir")"
-            dest="release/$os"
-            [[ -n "$VERSION" ]] && dest="$dest/$VERSION"
-            mkdir -p "$dest"
-            # keymapper-<os>.zip, or keymapper-<os>-<version>.zip. Only this file is replaced, so
-            # publishing without a version leaves the version folders inside release/<os>/ alone.
-            cp "${osdir}keymapper-$os.zip" "$dest/keymapper-$os${VERSION:+-$VERSION}.zip"
-            echo "published $os to $dest/keymapper-$os${VERSION:+-$VERSION}.zip"
-          done
-
-      - name: Commit and push
-        shell: bash
-        env:
-          VERSION: ${{ steps.version.outputs.value }}
-          BRANCH: ${{ github.event.repository.default_branch }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A release
-          if git diff --cached --quiet; then
-            echo "release/ is already up to date"
-            exit 0
-          fi
-          if [[ -n "$VERSION" ]]; then message="chore: add release $VERSION builds"; else message="chore: update release builds"; fi
-          git commit -m "$message"
-          git pull --rebase origin "$BRANCH"
-          git push origin "HEAD:$BRANCH"
+  macos:
+    uses: ./.github/workflows/release_macos.yml
+    secrets: inherit
