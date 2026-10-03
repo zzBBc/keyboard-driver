@@ -84,7 +84,7 @@ function bindEditor(name) {
     ed.appendChild(sc);
   }
 
-  const combo = bind.key ? [...MODS.filter(m => bind.mods.includes(m)), bind.key].join('+') : '';
+  const combo = bind.key ? comboText(bind.mods, bind.key) : '';
   const ok = document.createElement('button'); ok.className = 'primary'; ok.disabled = !combo;
   ok.textContent = combo ? `Bind ${chordLabel(combo)}` : 'Bind';
   ok.onclick = () => { setTarget(scopeList(bind.scope), combo, '@' + name); bind = null; render(); };
@@ -109,10 +109,10 @@ function stepsFromText(text) {
   return text.split(',').map(x => x.trim()).filter(Boolean).map(x => {
     const parts = x.split('+').map(y => y.trim().toLowerCase());
     const key = parts.pop();
-    return { mods: MODS.filter(m => parts.includes(m)), key };
+    return { mods: MODS.filter(m => parts.map(modId).includes(m)), key };
   });
 }
-const stepCombo = st => [...MODS.filter(m => st.mods.includes(m)), st.key].join('+');
+const stepCombo = st => comboText(st.mods, st.key);
 const stepsText = steps => steps.map(stepCombo).join(', ');
 
 // Editor for what an action sends. Saved as your own version of the action; Reset restores the built-in one.

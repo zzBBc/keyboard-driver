@@ -52,7 +52,8 @@ async function load() {
   $('keys').innerHTML = names.map(n => `<option value="${n}">`).join('');
   builtin = (await fetch('/api/actions').then(r => r.text())).split('\n').filter(Boolean).map(l => {
     const [name, desc, steps, shortcuts, category] = l.split('\t');
-    return { name, desc: desc || '', steps: steps || '', category: category || '', shortcuts: (shortcuts || '').split(',').map(x => x.trim()).filter(Boolean).map(normChord) };
+    // The server writes win/alt/ctrl; show and compare steps under this OS's names (cmd+c on macOS).
+    return { name, desc: desc || '', steps: steps ? stepsText(stepsFromText(steps)) : '', category: category || '', shortcuts: (shortcuts || '').split(',').map(x => x.trim()).filter(Boolean).map(normChord) };
   });
   await refreshDevices();
   await loadConfig();

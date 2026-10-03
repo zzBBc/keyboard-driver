@@ -4,12 +4,12 @@
 // gap); an empty row is a separator.
 const modLabel = m => layout.mods[m] || m[0].toUpperCase() + m.slice(1);
 const keyLabel = n => layout.labels[n] || (n.length === 1 || /^f\d+$/.test(n) ? n.toUpperCase() : n);
-const chordLabel = c => c.split('+').map(x => MODS.includes(x) ? modLabel(x) : keyLabel(x)).join('+');
+const chordLabel = c => c.split('+').map(x => modId(x) ? modLabel(modId(x)) : keyLabel(x)).join('+');
 // Short text for what a key becomes: a key name, a chord, or "@action".
 const targetLabel = t => t.trim().toLowerCase() === 'none' ? 'cleared' : t.startsWith('@') ? t : (t.includes(',') ? t : chordLabel(normChord(t)));
 let selKey = '', picking = false, selMods = [];
 
-const fromStr = name => [...MODS.filter(m => selMods.includes(m)), name].join('+');
+const fromStr = name => comboText(selMods, name);
 
 function buildKeyboard(list, trigger) {
   const wrap = document.createElement('div');

@@ -34,11 +34,12 @@ bool parseChord(const std::string& text, KeyChord& out, std::string& err) {
     KeyChord chord;
     for (size_t i = 0; i + 1 < parts.size(); ++i) {
         const std::string m = lower(parts[i]);
-        if (m == "ctrl") chord.mods |= ModCtrl;
-        else if (m == "alt") chord.mods |= ModAlt;
+        // Mac names work too, on every OS, so one config reads naturally on both.
+        if (m == "ctrl" || m == "control") chord.mods |= ModCtrl;
+        else if (m == "alt" || m == "option" || m == "opt") chord.mods |= ModAlt;
         else if (m == "shift") chord.mods |= ModShift;
-        else if (m == "win") chord.mods |= ModWin;
-        else { err = "unknown modifier '" + parts[i] + "' (use ctrl, alt, shift, win)"; return false; }
+        else if (m == "win" || m == "cmd" || m == "command") chord.mods |= ModWin;
+        else { err = "unknown modifier '" + parts[i] + "' (use ctrl, alt, shift, win; or control, option, cmd)"; return false; }
     }
     auto vk = vkFromName(parts.back());
     if (!vk) { err = "unknown key '" + parts.back() + "'"; return false; }

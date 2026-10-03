@@ -1,11 +1,12 @@
 # Built-in actions for macOS, loaded by the program on macOS (actions.windows.txt on Windows). The
 # build copies this file next to the program; do not edit that copy (it is replaced on every build).
-# Bind one with "alt+q = @name" in any config, or define an action of the same name in your own
+# Bind one with "option+q = @name" in any config, or define an action of the same name in your own
 # config to override it.
 #
-# Same names as the Windows actions, so a config binding @close-window works on both. Key names keep
-# their Windows names: win is Command, alt is Option, ctrl is Control. An action with no macOS
-# shortcut (snap-left, new-desktop, clipboard-history, the browser and mail keys...) is left out.
+# Same names as the Windows actions, so a config binding @close-window works on both. Modifiers use
+# the Mac names: cmd, option, control, shift (win, alt and ctrl mean the same and work too). Key
+# names keep their Windows names (lwin is the left Command key). An action with no macOS shortcut
+# (snap-left, new-desktop, clipboard-history, the browser and mail keys...) is left out.
 #
 # [action name]
 # description: what it does
@@ -17,37 +18,37 @@
 [action switch-window]
 description: Switch to the next app (hold Command to keep cycling)
 category: Windows and desktops
-win+tab
+cmd+tab
 
 [action previous-window]
 description: Switch to the previous app
 category: Windows and desktops
-win+shift+tab
+cmd+shift+tab
 
 [action next-app-window]
 description: Switch to the next window of the current app
 category: Windows and desktops
-win+`
+cmd+`
 
 [action task-view]
 description: Open Mission Control with all windows and desktops
 category: Windows and desktops
-ctrl+up
+control+up
 
 [action close-window]
 description: Close the active window
 category: Windows and desktops
-win+w
+cmd+w
 
 [action quit-app]
 description: Quit the active app
 category: Windows and desktops
-win+q
+cmd+q
 
 [action hide-app]
 description: Hide the active app
 category: Windows and desktops
-win+h
+cmd+h
 
 [action show-desktop]
 description: Show or hide the desktop
@@ -57,32 +58,32 @@ f11
 [action lock-screen]
 description: Lock the computer
 category: Windows and desktops
-ctrl+win+q
+control+cmd+q
 
 [action task-manager]
 description: Open Force Quit Applications
 category: Windows and desktops
-win+alt+esc
+cmd+option+esc
 
 [action maximize-window]
 description: Enter or leave full screen
 category: Windows and desktops
-ctrl+win+f
+control+cmd+f
 
 [action minimize-window]
 description: Minimize the window
 category: Windows and desktops
-win+m
+cmd+m
 
 [action next-desktop]
 description: Switch to the next desktop (Space)
 category: Windows and desktops
-ctrl+right
+control+right
 
 [action previous-desktop]
 description: Switch to the previous desktop (Space)
 category: Windows and desktops
-ctrl+left
+control+left
 
 # --- Media and browser keys ---
 # The media actions send the same keys as a keyboard's media keys, so a combo of yours can stand in
@@ -121,110 +122,110 @@ previoustrack
 [action browser-back]
 description: Browser back
 category: Media and browser
-win+[
+cmd+[
 
 [action browser-forward]
 description: Browser forward
 category: Media and browser
-win+]
+cmd+]
 
 [action browser-refresh]
 description: Refresh the page
 category: Media and browser
-win+r
+cmd+r
 
 # --- Launch ---
 
 [action file-explorer]
 description: Open a Finder search window
 category: Launch
-win+alt+space
+cmd+option+space
 
 [action run-dialog]
 description: Open Spotlight
 category: Launch
-win+space
+cmd+space
 
 [action screenshot-region]
 description: Capture part of the screen
 category: Launch
-win+shift+4
+cmd+shift+4
 
 [action screenshot-tool]
 description: Open the Screenshot toolbar (capture or record)
 category: Launch
-win+shift+5
+cmd+shift+5
 
 [action emoji-picker]
 description: Open the emoji picker
 category: Launch
-ctrl+win+space
+control+cmd+space
 
 # --- Editing ---
 
 [action copy]
 description: Copy the selection
 category: Editing
-win+c
+cmd+c
 
 [action cut]
 description: Cut the selection
 category: Editing
-win+x
+cmd+x
 
 [action paste]
 description: Paste
 category: Editing
-win+v
+cmd+v
 
 [action paste-plain]
 description: Paste without formatting
 category: Editing
-win+alt+shift+v
+cmd+option+shift+v
 
 [action undo]
 description: Undo
 category: Editing
-win+z
+cmd+z
 
 [action redo]
 description: Redo
 category: Editing
-win+shift+z
+cmd+shift+z
 
 [action select-all]
 description: Select everything
 category: Editing
-win+a
+cmd+a
 
 [action duplicate-selection]
 description: Copy the selection and paste it right after
 category: Editing
-win+c, win+v
+cmd+c, cmd+v
 
 # --- Tabs (browsers, editors) ---
 
 [action next-tab]
 description: Go to the next tab
 category: Tabs
-ctrl+tab
+control+tab
 
 [action previous-tab]
 description: Go to the previous tab
 category: Tabs
-ctrl+shift+tab
+control+shift+tab
 
 [action new-tab]
 description: Open a new tab
 category: Tabs
-win+t
+cmd+t
 
 [action close-tab]
 description: Close the current tab
 category: Tabs
-win+w
+cmd+w
 
 [action reopen-tab]
 description: Reopen the last closed tab
 category: Tabs
-win+shift+t
+cmd+shift+t

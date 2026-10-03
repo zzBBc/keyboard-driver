@@ -7,4 +7,4 @@ let builtin = [];  // [{ name, desc, steps }] from config/actions.<os>.txt, read
 let device = '';   // '' = default config, else a hardware id
 let devices = [];  // [{ id, own, name }]
 let lastKb = '';
-let layout = { rows: [], labels: {}, mods: {}, actionsNote: '' };  // web/layouts/<os>.json for the OS the program was built for
+let layout = { rows: [], labels: {}, mods: {}, names: {}, actionsNote: '' };  // web/layouts/<os>.json for the OS the program was built for

@@ -17,6 +17,7 @@
     "lalt": "Opt", "ralt": "Opt", "apps": "Menu", "space": "Space", "up": "↑", "down": "↓", "left": "←", "right": "→",
     "volumeup": "Vol+", "volumedown": "Vol−", "mute": "Mute", "playpause": "Play", "nexttrack": "Next", "previoustrack": "Prev"
   },
+  "names": { "ctrl": "control", "alt": "option", "shift": "shift", "win": "cmd" },
   "mods": { "ctrl": "Control", "alt": "Option", "shift": "Shift", "win": "Cmd" },
-  "actionsNote": "(macOS keeps some shortcuts, like Cmd+Tab, for itself; enter those with the boxes instead of recording. In the config, win is Command and alt is Option.)"
+  "actionsNote": "(macOS keeps some shortcuts, like Cmd+Tab, for itself; enter those with the boxes instead of recording. Combos are written with the Mac names (cmd, option, control); win, alt and ctrl mean the same.)"
 }

@@ -19,6 +19,7 @@
     "volumeup": "Vol+", "volumedown": "Vol−", "mute": "Mute", "playpause": "Play", "nexttrack": "Next", "previoustrack": "Prev",
     "mediastop": "Stop", "browserback": "Back", "browserforward": "Fwd", "browserrefresh": "Refresh", "browserhome": "Web", "launchmail": "Mail"
   },
+  "names": { "ctrl": "ctrl", "alt": "alt", "shift": "shift", "win": "win" },
   "mods": { "ctrl": "Ctrl", "alt": "Alt", "shift": "Shift", "win": "Win" },
   "actionsNote": "(Windows keeps some shortcuts, like Alt+Tab, for itself; enter those with the boxes instead of recording.)"
 }

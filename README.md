@@ -62,10 +62,13 @@ working after an update, remove the old entry with **-** in both lists and grant
 
 - Stop it with **Stop app**, Ctrl+C, or `pkill keymapper`. Starting it again stops the running copy,
   as on Windows.
-- Key names keep their Windows names: `win`/`lwin`/`rwin` is Command, `alt` is Option, `apps` is the
-  context-menu key, `insert` is Help. The built-in actions come from `config/actions.macos.txt`
-  and send Mac shortcuts (`win+w`, `ctrl+up`...) under the same names as on Windows, so a config
-  that binds `@close-window` works on both.
+- Combos can use the Mac modifier names: `cmd` (or `command`), `option` (or `opt`), `control`. They
+  mean the same as `win`, `alt`, `ctrl`, which also work, and the GUI writes the Mac names. Key
+  names keep their Windows names: `lwin`/`rwin` is Command, `lalt`/`ralt` is Option, `apps` is the
+  context-menu key, `insert` is Help.
+- The built-in actions come from `config/actions.macos.txt` and send Mac shortcuts (`cmd+w`,
+  `control+up`...) under the same names as on Windows, so a config that binds `@close-window`
+  works on both.
 - The GUI uses the Mac names (Control, Option, Cmd, Help, Delete) and a Mac keyboard layout, and
   leaves out the keys macOS has no code for. The config file still uses the names above.
 
@@ -116,7 +119,8 @@ l = right
 
 ### Combos and actions
 
-`from` can be a combo (modifiers `ctrl`, `alt`, `shift`, `win` plus one key) and `to` can be a key, a
+`from` can be a combo (modifiers `ctrl`, `alt`, `shift`, `win`, or the Mac names `control`, `option`,
+`cmd`, plus one key) and `to` can be a key, a
 combo, comma-separated steps, or `@action`. An action is a named list of steps, defined once and
 bound anywhere:
 
@@ -156,7 +160,7 @@ ctrl+c, ctrl+v               # steps run in order
 - *Tabs:* `next-tab`, `previous-tab`, `new-tab`, `close-tab`, `reopen-tab`.
 
 On macOS the list is `config/actions.macos.txt`: the same names with Mac shortcuts (`task-view` opens
-Mission Control, `run-dialog` opens Spotlight, `copy` sends `win+c`...), plus `next-app-window`,
+Mission Control, `run-dialog` opens Spotlight, `copy` sends `cmd+c`...), plus `next-app-window`,
 `quit-app`, `hide-app` and `screenshot-tool`. Actions macOS has no shortcut for (`snap-left`/`-right`,
 `new-desktop`, `clipboard-history`, `stop-media`, `browser-home`, `launch-mail`) are left out.
 
