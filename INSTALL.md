@@ -1,8 +1,8 @@
 # Run the release zip
 
-The release zips are in `release/<os>/`: `keymapper-windows.zip` and `keymapper-macos.zip`. Each
-holds the program, `web/`, the built-in actions and the default config. To build from source
-instead, see [README.md](README.md).
+The release zips are in the repository's `release/<os>/`: `keymapper-windows.zip` and
+`keymapper-macos.zip`. Each holds the program, `web/`, the built-in actions, the default config and
+this file.
 
 ## Windows
 
