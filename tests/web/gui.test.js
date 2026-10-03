@@ -158,8 +158,10 @@ test('every layout file is well formed and names only real keys', () => {
   assert.deepStrictEqual(files.sort(), ['macos.json', 'windows.json']);
   for (const f of files) {
     const l = JSON.parse(readLayout(path.basename(f, '.json')));
-    assert.deepStrictEqual(Object.keys(l.mods).sort(), ['alt', 'ctrl', 'shift', 'win'], f);
-    assert.deepStrictEqual(Object.keys(l.names).sort(), ['alt', 'ctrl', 'shift', 'win'], f);
+    // ctrl, alt, shift, win on every OS; fn only where it can be sent (macOS).
+    const mods = f === 'macos.json' ? ['alt', 'ctrl', 'fn', 'shift', 'win'] : ['alt', 'ctrl', 'shift', 'win'];
+    assert.deepStrictEqual(Object.keys(l.mods).sort(), mods, f);
+    assert.deepStrictEqual(Object.keys(l.names).sort(), mods, f);
     assert.strictEqual(typeof l.actionsNote, 'string', f);
     const drawn = [];
     for (const row of l.rows) {
@@ -213,4 +215,15 @@ test('on Windows the GUI keeps writing win, alt and ctrl', () => {
   run(`layout = ${readLayout('windows')}`);
   assert.strictEqual(run(`normChord('cmd+option+q')`), 'alt+win+q');
   assert.strictEqual(run(`stepsText(stepsFromText('control+c'))`), 'ctrl+c');
+});
+
+test('fn can be sent but is not part of a shortcut', () => {
+  const run = loadGui();
+  run(`layout = ${readLayout('macos')}; validKeys = new Set(['left', 'q'])`);
+  assert.strictEqual(run(`normChord('control+fn+left')`), 'fn+control+left');   // Fn first, as macOS shows it
+  assert.strictEqual(run(`chordLabel(normChord('ctrl+fn+left'))`), 'Fn+Control+\u2190');
+  assert.ok(run(`validSteps('fn+control+left') && validTarget('fn+control+left')`));
+  assert.ok(!run(`validChord('fn+q')`));                                      // the "from" side
+  assert.strictEqual(run(`stepsText(stepsFromText('fn+ctrl+left'))`), 'fn+control+left');
+  assert.ok(!run(`SHORTCUT_MODS.includes('fn')`));
 });

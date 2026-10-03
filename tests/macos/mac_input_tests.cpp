@@ -39,7 +39,7 @@ TEST(macKeyCodesMapToPortableIds) {
 TEST(macEveryKeyRoundTripsThroughItsCode) {
     for (unsigned short k = 1; k < 0x100; ++k) {
         const auto code = mac::macFromKey(k);
-        if (!code) continue;
+        if (!code || k == key::Fn) continue;  // Fn is send only (macFnIsSentButNeverReported)
         const auto back = mac::keyFromMac(*code);
         CHECK(back.has_value());
         // Either-side modifiers come back as the left key.
@@ -91,6 +91,22 @@ TEST(macModifierFlagsHaveGenericAndSideBits) {
     CHECK(mac::modifierFlags(kRightOption) == (mac::kFlagAlternate | 0x40));
     CHECK(mac::modifierFlags(kA) == 0);
     CHECK(mac::modifierFlags(kCapsLock) == 0);
+    CHECK(mac::modifierFlags(kFn) == mac::kFlagSecondaryFn);  // one Fn key: no side bit
+}
+
+TEST(macFnIsSentButNeverReported) {
+    // key::Fn is sent as the Fn key; a physical Fn still isn't reported, so laptops' Fn+arrow keys
+    // (Home, End...) keep matching mappings on those keys.
+    CHECK(mac::macFromKey(key::Fn) == kFn);
+    CHECK(!mac::keyFromMac(kFn));
+    mac::ModifierState s;
+    s.injected(kFn, false);
+    s.injected(kControl, false);
+    CHECK(s.apply(0) == (mac::kFlagSecondaryFn | mac::kFlagControl | 0x1));  // what the arrow carries
+    s.injected(kFn, true);
+    s.injected(kControl, true);
+    CHECK(!s.overriding());
+    CHECK(s.apply(0) == 0);
 }
 
 TEST(macModifierReleaseIsReadFromItsSideBit) {
