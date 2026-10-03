@@ -43,6 +43,8 @@ async function switchDevice(id) {
 }
 
 async function load() {
+  const os = (await fetch('/api/platform').then(r => r.text())).trim();
+  layout = await fetch(`/layouts/${encodeURIComponent(os)}.json`).then(r => r.json());
   const keys = await fetch('/api/keys').then(r => r.text());
   const names = keys.split('\n').filter(Boolean);
   validKeys = new Set(names.map(n => n.toLowerCase()));
@@ -50,7 +52,8 @@ async function load() {
   $('keys').innerHTML = names.map(n => `<option value="${n}">`).join('');
   builtin = (await fetch('/api/actions').then(r => r.text())).split('\n').filter(Boolean).map(l => {
     const [name, desc, steps, shortcuts, category] = l.split('\t');
-    return { name, desc: desc || '', steps: steps || '', category: category || '', shortcuts: (shortcuts || '').split(',').map(x => x.trim()).filter(Boolean).map(normChord) };
+    // The server writes win/alt/ctrl; show and compare steps under this OS's names (cmd+c on macOS).
+    return { name, desc: desc || '', steps: steps ? stepsText(stepsFromText(steps)) : '', category: category || '', shortcuts: (shortcuts || '').split(',').map(x => x.trim()).filter(Boolean).map(normChord) };
   });
   await refreshDevices();
   await loadConfig();

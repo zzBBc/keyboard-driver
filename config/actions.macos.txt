@@ -1,0 +1,337 @@
+# Built-in actions for macOS, loaded by the program on macOS (actions.windows.txt on Windows). The
+# build copies this file next to the program; do not edit that copy (it is replaced on every build).
+# Bind one with "option+q = @name" in any config, or define an action of the same name in your own
+# config to override it.
+#
+# Same names as the Windows actions, so a config binding @close-window works on both. Modifiers use
+# the Mac names: cmd, option, control, shift (win, alt and ctrl mean the same and work too). Key
+# names keep their Windows names (lwin is the left Command key); fn is the Fn/Globe key, which a step
+# can send but a shortcut can't use. An action keymapper can't do on macOS is left out: new-desktop
+# (no shortcut), clipboard-history (none before macOS 26), stop-media and launch-mail (no such key).
+#
+# [action name]
+# description: what it does
+# category: group name in the GUI (optional)
+# step, step        (each step is a key or combo; steps run in order)
+
+# --- Windows and desktops ---
+
+[action switch-window]
+description: Switch to the next app (hold Command to keep cycling)
+category: Windows and desktops
+cmd+tab
+
+[action previous-window]
+description: Switch to the previous app
+category: Windows and desktops
+cmd+shift+tab
+
+[action next-app-window]
+description: Switch to the next window of the current app
+category: Windows and desktops
+cmd+`
+
+[action task-view]
+description: Open Mission Control with all windows and desktops
+category: Windows and desktops
+control+up
+
+[action close-window]
+description: Close the active window
+category: Windows and desktops
+cmd+w
+
+[action quit-app]
+description: Quit the active app
+category: Windows and desktops
+cmd+q
+
+[action hide-app]
+description: Hide the active app
+category: Windows and desktops
+cmd+h
+
+[action show-desktop]
+description: Show or hide the desktop
+category: Windows and desktops
+f11
+
+[action lock-screen]
+description: Lock the computer
+category: Windows and desktops
+control+cmd+q
+
+[action task-manager]
+description: Open Force Quit Applications
+category: Windows and desktops
+cmd+option+esc
+
+[action snap-left]
+description: Tile the window on the left half (macOS 15 or later)
+category: Windows and desktops
+fn+control+left
+
+[action snap-right]
+description: Tile the window on the right half (macOS 15 or later)
+category: Windows and desktops
+fn+control+right
+
+[action snap-top]
+description: Tile the window on the top half (macOS 15 or later)
+category: Windows and desktops
+fn+control+up
+
+[action snap-bottom]
+description: Tile the window on the bottom half (macOS 15 or later)
+category: Windows and desktops
+fn+control+down
+
+[action arrange-left-right]
+description: Arrange the two front windows side by side, this one on the left (macOS 15 or later)
+category: Windows and desktops
+fn+control+shift+left
+
+[action arrange-right-left]
+description: Arrange the two front windows side by side, this one on the right (macOS 15 or later)
+category: Windows and desktops
+fn+control+shift+right
+
+[action arrange-top-bottom]
+description: Arrange the two front windows one above the other, this one on top (macOS 15 or later)
+category: Windows and desktops
+fn+control+shift+up
+
+[action arrange-bottom-top]
+description: Arrange the two front windows one above the other, this one at the bottom (macOS 15 or later)
+category: Windows and desktops
+fn+control+shift+down
+
+[action center-window]
+description: Center the window (macOS 15 or later)
+category: Windows and desktops
+fn+control+c
+
+[action restore-window]
+description: Return the window to its size before tiling (macOS 15 or later)
+category: Windows and desktops
+fn+control+r
+
+[action maximize-window]
+description: Fill the screen with the window (macOS 15 or later)
+category: Windows and desktops
+fn+control+f
+
+[action full-screen]
+description: Enter or leave full screen
+category: Windows and desktops
+control+cmd+f
+
+[action minimize-window]
+description: Minimize the window
+category: Windows and desktops
+cmd+m
+
+[action next-desktop]
+description: Switch to the next desktop (Space)
+category: Windows and desktops
+control+right
+
+[action previous-desktop]
+description: Switch to the previous desktop (Space)
+category: Windows and desktops
+control+left
+
+# --- Media and browser keys ---
+# The media actions send the same keys as a keyboard's media keys, so a combo of yours can stand in
+# for one. macOS has no browser keys, so the browser actions send the browsers' own shortcuts.
+
+[action volume-up]
+description: Raise the volume
+category: Media and browser
+volumeup
+
+[action volume-down]
+description: Lower the volume
+category: Media and browser
+volumedown
+
+[action mute]
+description: Mute or unmute
+category: Media and browser
+mute
+
+[action play-pause]
+description: Play or pause the current media
+category: Media and browser
+playpause
+
+[action next-track]
+description: Next track
+category: Media and browser
+nexttrack
+
+[action previous-track]
+description: Previous track
+category: Media and browser
+previoustrack
+
+[action browser-back]
+description: Browser back
+category: Media and browser
+cmd+[
+
+[action browser-forward]
+description: Browser forward
+category: Media and browser
+cmd+]
+
+[action browser-refresh]
+description: Refresh the page
+category: Media and browser
+cmd+r
+
+[action browser-home]
+description: Open the browser home page (Safari, Chrome)
+category: Media and browser
+cmd+shift+h
+
+# --- Launch ---
+
+[action file-explorer]
+description: Open a Finder search window
+category: Launch
+cmd+option+space
+
+[action run-dialog]
+description: Open Spotlight
+category: Launch
+cmd+space
+
+[action screenshot-screen]
+description: Capture the whole screen to a file on the desktop
+category: Launch
+cmd+shift+3
+
+[action screenshot-screen-clipboard]
+description: Capture the whole screen to the clipboard
+category: Launch
+control+shift+cmd+3
+
+[action screenshot-region]
+description: Capture part of the screen to a file on the desktop
+category: Launch
+cmd+shift+4
+
+[action screenshot-region-clipboard]
+description: Capture part of the screen to the clipboard
+category: Launch
+control+shift+cmd+4
+
+[action screenshot-tool]
+description: Open the Screenshot toolbar (capture or record)
+category: Launch
+cmd+shift+5
+
+[action emoji-picker]
+description: Open the emoji picker
+category: Launch
+control+cmd+space
+
+[action app-launcher]
+description: Open Launchpad
+category: Launch
+fn+shift+a
+
+[action control-center]
+description: Open Control Center
+category: Launch
+fn+c
+
+[action notification-center]
+description: Open Notification Center
+category: Launch
+fn+n
+
+[action focus-dock]
+description: Move the keyboard focus to the Dock
+category: Launch
+fn+a
+
+[action focus-menu-bar]
+description: Move the keyboard focus to the menu bar
+category: Launch
+fn+m
+
+[action quick-note]
+description: Start a Quick Note
+category: Launch
+fn+q
+
+# --- Editing ---
+
+[action copy]
+description: Copy the selection
+category: Editing
+cmd+c
+
+[action cut]
+description: Cut the selection
+category: Editing
+cmd+x
+
+[action paste]
+description: Paste
+category: Editing
+cmd+v
+
+[action paste-plain]
+description: Paste without formatting
+category: Editing
+cmd+option+shift+v
+
+[action undo]
+description: Undo
+category: Editing
+cmd+z
+
+[action redo]
+description: Redo
+category: Editing
+cmd+shift+z
+
+[action select-all]
+description: Select everything
+category: Editing
+cmd+a
+
+[action duplicate-selection]
+description: Copy the selection and paste it right after
+category: Editing
+cmd+c, cmd+v
+
+# --- Tabs (browsers, editors) ---
+
+[action next-tab]
+description: Go to the next tab
+category: Tabs
+control+tab
+
+[action previous-tab]
+description: Go to the previous tab
+category: Tabs
+control+shift+tab
+
+[action new-tab]
+description: Open a new tab
+category: Tabs
+cmd+t
+
+[action close-tab]
+description: Close the current tab
+category: Tabs
+cmd+w
+
+[action reopen-tab]
+description: Reopen the last closed tab
+category: Tabs
+cmd+shift+t

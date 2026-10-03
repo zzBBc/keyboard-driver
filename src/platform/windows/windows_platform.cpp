@@ -156,6 +156,7 @@ bool isExtendedKey(WORD vk) {
 }
 
 void sendKey(WORD vk, bool keyUp) {
+    if (vk == key::Fn) return;  // the Fn key is handled inside the keyboard; Windows has no key for it
     INPUT in{};
     in.type = INPUT_KEYBOARD;
     in.ki.wVk = vk;
@@ -301,6 +302,8 @@ bool openUrl(const std::string& url) {
     const std::wstring wide(url.begin(), url.end());  // URLs here are plain ASCII
     return reinterpret_cast<INT_PTR>(ShellExecuteW(nullptr, L"open", wide.c_str(), nullptr, nullptr, SW_SHOWNORMAL)) > 32;
 }
+
+const char* name() { return "windows"; }
 
 void adoptConfig(const std::string&, Config&) {}  // the hook does every mapping itself
 

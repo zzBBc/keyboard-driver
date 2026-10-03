@@ -12,7 +12,7 @@ struct ServerOptions {
     std::function<void()> onQuit;  // called after POST /api/quit has been answered
     std::string webDir;      // folder containing index.html
     std::string configPath;  // default config, read/written by the GUI
-    std::shared_ptr<const Config> library;  // built-in actions (config/actions.txt)
+    std::shared_ptr<const Config> library;  // built-in actions (config/actions.<os>.txt)
     std::string devicesDir;  // per-keyboard configs: <devicesDir>\<hardware id>.txt
 };
 

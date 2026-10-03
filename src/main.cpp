@@ -17,12 +17,13 @@ int main(int argc, char** argv) {
     const std::string dir = platform::exeDir();
     Engine engine;
 
-    // Built-in actions shipped next to the exe; configs may use them without defining them.
+    // Built-in actions shipped next to the exe; configs may use them without defining them. Each OS
+    // has its own list (they send that OS's shortcuts): actions.windows.txt, actions.macos.txt.
     auto library = std::make_shared<Config>();
     {
         std::string libText;
         std::vector<std::string> libErrors;
-        const std::string libPath = (std::filesystem::path(dir) / "actions.txt").string();
+        const std::string libPath = (std::filesystem::path(dir) / (std::string("actions.") + platform::name() + ".txt")).string();
         if (readFile(libPath, libText) && !parseConfig(libText, *library, libErrors))
             for (const auto& e : libErrors) std::cerr << libPath << ": " << e << "\n";
     }

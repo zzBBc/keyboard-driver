@@ -4,7 +4,7 @@
 
 namespace {
 
-constexpr unsigned kAllMods[] = {ModCtrl, ModAlt, ModShift, ModWin};
+constexpr unsigned kAllMods[] = {ModFn, ModCtrl, ModAlt, ModShift, ModWin};  // Fn first, as macOS presses it
 
 // Key we press when a modifier has to be held and the user isn't holding one.
 unsigned short leftKeyFor(unsigned mod) {
@@ -12,6 +12,7 @@ unsigned short leftKeyFor(unsigned mod) {
         case ModCtrl: return key::LControl;
         case ModAlt: return key::LAlt;
         case ModShift: return key::LShift;
+        case ModFn: return key::Fn;
         default: return key::LWin;
     }
 }
@@ -24,6 +25,7 @@ unsigned modBit(unsigned short vk) {
         case key::LAlt: case key::RAlt: case key::Alt: return ModAlt;
         case key::LShift: case key::RShift: case key::Shift: return ModShift;
         case key::LWin: case key::RWin: return ModWin;
+        case key::Fn: return ModFn;
         default: return 0;
     }
 }

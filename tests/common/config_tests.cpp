@@ -259,3 +259,26 @@ TEST(actionOrderFollowsTheFile) {
     CHECK(p.cfg.actionOrder.size() == 3);
     CHECK(p.cfg.actionOrder.size() == 3 && p.cfg.actionOrder[0] == "zeta" && p.cfg.actionOrder[1] == "alpha" && p.cfg.actionOrder[2] == "mid");
 }
+
+TEST(shippedActionListsParse) {
+    // Both OS lists load without errors, and the Mac one reuses the Windows names where it can.
+    auto win = parse(sourceFile("config/actions.windows.txt"));
+    auto mac = parse(sourceFile("config/actions.macos.txt"));
+    for (const auto& e : win.errors) std::cerr << "  actions.windows.txt: " << e << "\n";
+    for (const auto& e : mac.errors) std::cerr << "  actions.macos.txt: " << e << "\n";
+    CHECK(win.ok && win.errors.empty() && win.cfg.actions.size() == 55);
+    CHECK(mac.ok && mac.errors.empty() && mac.cfg.actions.size() == 62);
+    for (const char* name : {"switch-window", "close-window", "task-view", "copy", "undo", "new-tab"})
+        CHECK(win.cfg.actions.count(name) == 1 && mac.cfg.actions.count(name) == 1);
+    CHECK(mac.cfg.actions["copy"].size() == 1 && mac.cfg.actions["copy"][0].mods == ModWin);  // Cmd+C
+}
+
+TEST(macModifierNamesMeanTheSameModifiers) {
+    // cmd/command = win, option/opt = alt, control = ctrl, on every OS.
+    auto p = parse("cmd+option+control+shift+q = a\ncommand+opt+w = b\n");
+    for (const auto& e : p.errors) std::cerr << "  parse error: " << e << "\n";
+    CHECK(p.ok && p.errors.empty());
+    CHECK(findBinding(p.cfg.base.chords, ModWin | ModAlt | ModCtrl | ModShift, 'Q') != nullptr);
+    CHECK(findBinding(p.cfg.base.chords, ModWin | ModAlt, 'W') != nullptr);
+    CHECK(!parse("super+q = a\n").ok);  // still an unknown modifier
+}

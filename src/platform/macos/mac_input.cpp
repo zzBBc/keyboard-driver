@@ -149,6 +149,7 @@ std::optional<unsigned short> keyFromMac(uint16_t code) {
 }
 
 std::optional<uint16_t> macFromKey(unsigned short key) {
+    if (key == key::Fn) return kVK_Function;  // send only: a physical Fn is never reported (see keyFromMac)
     for (const auto& r : kKeys)
         if (r.key == key) return r.mac;
     return std::nullopt;
@@ -170,6 +171,7 @@ Flags modifierFlags(uint16_t code) {
         case kVK_RightCommand: return kFlagCommand | 0x00000010;
         case kVK_Option: return kFlagAlternate | 0x00000020;
         case kVK_RightOption: return kFlagAlternate | 0x00000040;
+        case kVK_Function: return kFlagSecondaryFn;  // no left/right bit: there is one Fn key
         default: return 0;
     }
 }

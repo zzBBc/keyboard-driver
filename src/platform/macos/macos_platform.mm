@@ -272,6 +272,8 @@ std::string lastKeyboard() {
     return g_attributor.last();
 }
 
+const char* name() { return "macos"; }
+
 bool openUrl(const std::string& url) {
     @autoreleasepool {
         NSURL* u = [NSURL URLWithString:[NSString stringWithUTF8String:url.c_str()]];

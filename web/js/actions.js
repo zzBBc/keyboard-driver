@@ -13,8 +13,8 @@ function keyFromEvent(e) {
   if (/^F\d{1,2}$/.test(e.code)) return e.code.toLowerCase();
   return CODE_KEYS[e.code] || '';  // modifier keys and anything unknown: not a key for a shortcut
 }
-// Record the next shortcut pressed in the browser. (Windows keeps some, like Alt+Tab, for itself:
-// use the checkboxes and key list for those.)
+// Record the next shortcut pressed in the browser. (The OS keeps some, like Alt+Tab or Cmd+Tab, for
+// itself: use the checkboxes and key list for those.) Cmd on a Mac arrives as metaKey, like Win.
 document.addEventListener('keydown', e => {
   const target = bind && bind.recording ? bind : edit && edit.rec >= 0 ? edit : null;
   if (!target) return;
@@ -62,11 +62,11 @@ function bindEditor(name) {
   ed.appendChild(rec);
 
   ed.append('or');
-  for (const m of MODS) {
+  for (const m of SHORTCUT_MODS) {
     const l = document.createElement('label'), c = document.createElement('input');
     c.type = 'checkbox'; c.checked = bind.mods.includes(m);
     c.onchange = () => { bind.mods = c.checked ? [...bind.mods, m] : bind.mods.filter(x => x !== m); render(); };
-    l.append(c, m[0].toUpperCase() + m.slice(1)); ed.appendChild(l);
+    l.append(c, modLabel(m)); ed.appendChild(l);
   }
   const key = document.createElement('select');
   const none = document.createElement('option'); none.value = ''; none.textContent = 'Key\u2026'; key.appendChild(none);
@@ -84,7 +84,7 @@ function bindEditor(name) {
     ed.appendChild(sc);
   }
 
-  const combo = bind.key ? [...MODS.filter(m => bind.mods.includes(m)), bind.key].join('+') : '';
+  const combo = bind.key ? comboText(bind.mods, bind.key) : '';
   const ok = document.createElement('button'); ok.className = 'primary'; ok.disabled = !combo;
   ok.textContent = combo ? `Bind ${chordLabel(combo)}` : 'Bind';
   ok.onclick = () => { setTarget(scopeList(bind.scope), combo, '@' + name); bind = null; render(); };
@@ -109,10 +109,10 @@ function stepsFromText(text) {
   return text.split(',').map(x => x.trim()).filter(Boolean).map(x => {
     const parts = x.split('+').map(y => y.trim().toLowerCase());
     const key = parts.pop();
-    return { mods: MODS.filter(m => parts.includes(m)), key };
+    return { mods: MODS.filter(m => parts.map(modId).includes(m)), key };
   });
 }
-const stepCombo = st => [...MODS.filter(m => st.mods.includes(m)), st.key].join('+');
+const stepCombo = st => comboText(st.mods, st.key);
 const stepsText = steps => steps.map(stepCombo).join(', ');
 
 // Editor for what an action sends. Saved as your own version of the action; Reset restores the built-in one.
@@ -125,11 +125,11 @@ function stepEditor(name, info) {
     rec.textContent = edit.rec === i ? 'Press the keys\u2026 (Esc cancels)' : 'Record';
     rec.onclick = () => { edit.rec = edit.rec === i ? -1 : i; render(); };
     row.append(lbl, rec, 'or');
-    for (const m of MODS) {
+    for (const m of MODS.filter(x => layout.mods[x])) {  // only the modifiers this OS has (Fn: macOS)
       const l = document.createElement('label'), c = document.createElement('input');
       c.type = 'checkbox'; c.checked = st.mods.includes(m);
       c.onchange = () => { st.mods = c.checked ? [...st.mods, m] : st.mods.filter(x => x !== m); render(); };
-      l.append(c, m[0].toUpperCase() + m.slice(1)); row.appendChild(l);
+      l.append(c, modLabel(m)); row.appendChild(l);
     }
     const key = document.createElement('select');
     const none = document.createElement('option'); none.value = ''; none.textContent = 'Key\u2026'; key.appendChild(none);
@@ -166,7 +166,7 @@ function stepEditor(name, info) {
 
 function renderActions(p) {
   const hint = document.createElement('p'); hint.className = 'hint';
-  hint.textContent = 'Pick an action and give it a shortcut, or change the keys it sends (for example make Undo send alt+z). Removing a shortcut keeps the action. Press Save to apply. (Windows keeps some shortcuts, like Alt+Tab, for itself; enter those with the boxes instead of recording.)';
+  hint.textContent = 'Pick an action and give it a shortcut, or change the keys it sends (for example make Undo send alt+z). Removing a shortcut keeps the action. Press Save to apply. ' + layout.actionsNote;
   p.appendChild(hint);
 
   const section = (title, names) => {
@@ -237,7 +237,7 @@ function renderActions(p) {
   section('In your config file', userOnly);
   if (!builtin.length && !state.actions.length) {
     const e = document.createElement('div'); e.className = 'empty';
-    e.textContent = 'No actions found (actions.txt next to the exe).';
+    e.textContent = 'No actions found (actions.windows.txt or actions.macos.txt next to the program).';
     p.appendChild(e);
   }
 }

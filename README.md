@@ -12,7 +12,7 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release
 ```
 
-The build copies `web/`, the built-in actions (`actions.txt`) and the default config
+The build copies `web/`, the built-in actions (`actions.windows.txt`, `actions.macos.txt`) and the default config
 (`mappings.default.txt`) next to the program: `build\Release\` on Windows, `build/` on macOS.
 
 ## Run
@@ -62,9 +62,17 @@ working after an update, remove the old entry with **-** in both lists and grant
 
 - Stop it with **Stop app**, Ctrl+C, or `pkill keymapper`. Starting it again stops the running copy,
   as on Windows.
-- Key names keep their Windows names: `win`/`lwin`/`rwin` is Command, `alt` is Option, `apps` is the
-  context-menu key, `insert` is Help. The built-in actions send Windows shortcuts (`win+d`,
-  `alt+f4`...), so most of them mean something else on macOS. Bind keys or your own actions there.
+- Combos can use the Mac modifier names: `cmd` (or `command`), `option` (or `opt`), `control`. They
+  mean the same as `win`, `alt`, `ctrl`, which also work, and the GUI writes the Mac names. Key
+  names keep their Windows names: `lwin`/`rwin` is Command, `lalt`/`ralt` is Option, `apps` is the
+  context-menu key, `insert` is Help.
+- `fn` is the Fn (Globe) key. A step can send it (`fn+control+left` tiles the window left), but a
+  shortcut can't use it: keymapper never sees Fn pressed, so the config rejects `fn+x = ...`.
+- The built-in actions come from `config/actions.macos.txt` and send Mac shortcuts (`cmd+w`,
+  `control+up`...) under the same names as on Windows, so a config that binds `@close-window`
+  works on both.
+- The GUI uses the Mac names (Control, Option, Cmd, Help, Delete) and a Mac keyboard layout, and
+  leaves out the keys macOS has no code for. The config file still uses the names above.
 
 ## Using the GUI
 
@@ -72,12 +80,13 @@ working after an update, remove the old entry with **-** in both lists and grant
   **Detect** selects the keyboard you typed on last.
 - **Base** tab: mappings that are always active. A **Layer** tab applies only while its key is held.
 - **Keyboard picture**: click a key, then pick what it becomes from the list (actions and keys), or
-  use **Pick on keyboard** and click the key. It includes F13-F24 and the media and browser keys.
-  Tick Ctrl/Alt/Shift/Win first to bind a combo such as Alt+Q. A combo or steps written by hand in
+  use **Pick on keyboard** and click the key. It includes F13-F24 and the media and browser keys
+  (on macOS: F13-F20 and the media keys). Tick Ctrl/Alt/Shift/Win (Control/Option/Shift/Cmd on
+  macOS) first to bind a combo such as Alt+Q. A combo or steps written by hand in
   the config show as "Custom" in the list and are kept.
 - **Actions** tab: every built-in action, grouped by category, with its description and the keys it
   sends. Click **+ Shortcut** on one and press the keys (or tick modifiers and pick a key) to bind it;
-  the keys Windows keeps for itself, like Alt+Tab, can't be recorded in a browser, so use the boxes.
+  the keys the OS keeps for itself, like Alt+Tab (Cmd+Tab on macOS), can't be recorded in a browser, so use the boxes.
   **Remove shortcut** (or a chip's ×) removes only the combo; the action stays. **Change keys** changes
   what an action sends (for example Undo sends `alt+z` instead of `ctrl+z`); **Reset keys** undoes that.
 - **Save** applies the change immediately, no restart needed.
@@ -88,7 +97,7 @@ working after an update, remove the old entry with **-** in both lists and grant
 |---|---|
 | `mappings.txt` (next to the exe) | the default: every keyboard without its own file |
 | `devices\<hardware id>.txt` | one specific keyboard, e.g. `devices\VID_048D&PID_C108.txt` |
-| `actions.txt` (next to the exe) | the built-in actions, copied from `config/actions.txt` on every build; do not edit this copy |
+| `actions.windows.txt` / `actions.macos.txt` (next to the exe) | the built-in actions for each OS (the program loads the one for the OS it runs on), copied from `config/` on every build; do not edit these copies |
 
 On first run `mappings.txt` is created from `mappings.default.txt` and never overwritten. Configs are
 edited by the GUI, or by hand (restart to pick up hand edits).
@@ -112,8 +121,10 @@ l = right
 
 ### Combos and actions
 
-`from` can be a combo (modifiers `ctrl`, `alt`, `shift`, `win` plus one key) and `to` can be a key, a
-combo, comma-separated steps, or `@action`. An action is a named list of steps, defined once and
+`from` can be a combo (modifiers `ctrl`, `alt`, `shift`, `win`, or the Mac names `control`, `option`,
+`cmd`, plus one key) and `to` can be a key, a
+combo, comma-separated steps, or `@action`. A combo in `to` can also hold `fn` (macOS only; ignored on
+Windows, which has no Fn key). An action is a named list of steps, defined once and
 bound anywhere:
 
 ```
@@ -139,17 +150,28 @@ ctrl+c, ctrl+v               # steps run in order
 - `alt+q = none` removes the binding for that combo, including a default shortcut declared by a
   library action (a default is bound in Base unless your config binds or clears that combo). It does
   not block the key itself. In the GUI a default shows as a chip marked "(default)" and its ×
-  writes the `none` line. The shipped `config/actions.txt` declares no defaults at the moment.
+  writes the `none` line. The shipped action lists declare no defaults at the moment.
 - Defining an action with the same name as a built-in one in your config overrides it.
 
-**Built-in actions** (`config/actions.txt`) are 44 common shortcuts in five categories:
-- *Windows and desktops:* `switch-window`, `previous-window`, `task-view`, `close-window`,
-  `show-desktop`, `lock-screen`, `snap-left`, `next-desktop`, ...
+**Built-in actions** (`config/actions.windows.txt` on Windows) are 55 common shortcuts in five categories:
+- *Windows and desktops:* `switch-window`, `previous-window`, `task-view`, `close-window`, `quit-app`,
+  `show-desktop`, `lock-screen`, `snap-left`, `maximize-window`, `full-screen`, `next-desktop`, ...
 - *Media and browser:* `volume-up`, `volume-down`, `mute`, `play-pause`, `next-track`,
   `previous-track`, `stop-media`, `browser-back`/`-forward`/`-refresh`/`-home`, `launch-mail`.
-- *Launch:* `file-explorer`, `run-dialog`, `screenshot-region`, `emoji-picker`, `clipboard-history`.
+- *Launch:* `file-explorer`, `run-dialog`, `screenshot-screen`, `screenshot-region` (each also as
+  `-clipboard`), `screenshot-tool`, `emoji-picker`, `clipboard-history`, `app-launcher`,
+  `control-center`, `notification-center`, `focus-dock`, `focus-menu-bar`.
 - *Editing:* `copy`, `cut`, `paste`, `undo`, `redo`, `select-all`, ...
 - *Tabs:* `next-tab`, `previous-tab`, `new-tab`, `close-tab`, `reopen-tab`.
+
+On macOS the list is `config/actions.macos.txt` (62 actions): the same names with Mac shortcuts
+(`task-view` opens Mission Control, `run-dialog` opens Spotlight, `copy` sends `cmd+c`,
+`control-center` sends `fn+c`...), plus what Windows has no shortcut for: `next-app-window`,
+`hide-app`, `quick-note`, and macOS 15's window tiling (`snap-top`/`-bottom`,
+`arrange-left-right`/`-right-left`/`-top-bottom`/`-bottom-top`, `center-window`, `restore-window`;
+`snap-left`/`-right` and `maximize-window` tile too). Many of these send the Fn (Globe) key, like
+`fn+control+left`. Actions macOS has no shortcut for (`new-desktop`, `clipboard-history`,
+`stop-media`, `launch-mail`) are left out.
 
 None has a default shortcut. The GUI chooses actions from these lists and does not create new ones;
 to define your own, write an `[action ...]` block in the config file. The media actions send the same
@@ -214,7 +236,7 @@ The program is a portable core plus one small layer per operating system:
   and the keyboard it came from, decides whether to swallow it and which keys to inject), and the
   rules for which GUI files may be served (`static_files`). Built as the `keymapper_core` library.
 - `src/server/server.cpp`: localhost HTTP server and API (`/api/config`, `/api/devices`,
-  `/api/keys`, `/api/actions`) plus the GUI's scripts and styles from `web/`. It uses
+  `/api/keys`, `/api/actions`, `/api/platform`) plus the GUI's scripts and styles from `web/`. It uses
   `std::filesystem` and a small Winsock/BSD sockets shim, so it is portable too.
 - `src/platform/platform.h`: what the program needs from the OS (find the install folder, list
   keyboards, intercept keys and inject the engine's output).
@@ -225,15 +247,19 @@ The program is a portable core plus one small layer per operating system:
   modifier flags, media key events, which keyboard a key came from) are in `mac_input.cpp`, which
   uses no Apple API, so `tests/macos/` can test it without a keyboard tap.
 - `src/main.cpp`: loads configs, creates the engine, starts the server and the platform hook.
-- `config/`: `actions.txt` (the built-in actions) and `mappings.txt` (the default config).
+- `config/`: `actions.windows.txt` and `actions.macos.txt` (the built-in actions for each OS)
+  and `mappings.txt` (the default config).
 - `web/`: the GUI: `index.html`, `css/app.css` and plain scripts in `js/` loaded in order: `state`
   (shared state), `config` (parsing and validation), `keyboard` (keyboard picture and target
   picker), `actions` (Actions tab), `devices` (server calls), `app` (rendering and start-up).
+  `layouts/<os>.json` (`windows`, `macos`) holds what differs per OS: the keyboard picture's rows,
+  key and modifier labels, and the Actions tab's note. The GUI loads the one `/api/platform` names.
 - `tests/`: C++ tests, one file per area, on a tiny shared harness (`harness.h`: write
   `TEST(name) { CHECK(...); }` and it registers itself). `tests/common/` (`config_`, `matcher_`,
   `keys_`, `engine_`, `static_files_tests.cpp`) runs on every OS; `tests/macos/`
-  (`mac_input_tests.cpp`) and `tests/windows/` cover a platform layer and are built on that OS
-  only. `tests/web/` has the GUI logic tests (Node).
+  (`mac_input_tests.cpp`, and `fn_tests.cpp` for the `fn` modifier only macOS can send) and
+  `tests/windows/` cover a platform layer and are built on that OS only. `tests/web/` has the GUI
+  logic tests (Node).
 
 To port to another OS (for example Linux), add `src/platform/<os>/` implementing `platform.h` and
 list it in `CMakeLists.txt`. Nothing in `core/`, `server/`, `web/` or the config format changes.

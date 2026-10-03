@@ -1,0 +1,25 @@
+{
+  "rows": [
+    ["esc", 1, "f1", "f2", "f3", "f4", 0.5, "f5", "f6", "f7", "f8", 0.5, "f9", "f10", "f11", "f12", 0.5, "printscreen", "scrolllock", "pause"],
+    ["`", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", ["backspace", 2], 0.5, "insert", "home", "pageup"],
+    [["tab", 1.5], "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", ["\\", 1.5], 0.5, "delete", "end", "pagedown"],
+    [["capslock", 1.75], "a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'", ["enter", 2.25]],
+    [["lshift", 2.25], "z", "x", "c", "v", "b", "n", "m", ",", ".", "/", ["rshift", 2.75], 1.5, "up"],
+    [["lctrl", 1.25], ["lwin", 1.25], ["lalt", 1.25], ["space", 6.25], ["ralt", 1.25], ["rwin", 1.25], ["apps", 1.25], ["rctrl", 1.25], 0.5, "left", "down", "right"],
+    [],
+    ["f13", "f14", "f15", "f16", 0.5, "f17", "f18", "f19", "f20", 0.5, "f21", "f22", "f23", "f24"],
+    [["volumedown", 1.5], ["volumeup", 1.5], ["mute", 1.5], ["playpause", 1.5], ["previoustrack", 1.5], ["nexttrack", 1.5], ["mediastop", 1.5], 0.5,
+     ["browserback", 1.5], ["browserforward", 1.5], ["browserrefresh", 1.5], ["browserhome", 1.5], ["launchmail", 1.5]]
+  ],
+  "labels": {
+    "esc": "Esc", "printscreen": "PrtSc", "scrolllock": "ScrLk", "pause": "Pause", "backspace": "Bksp", "insert": "Ins",
+    "home": "Home", "pageup": "PgUp", "delete": "Del", "end": "End", "pagedown": "PgDn", "tab": "Tab", "capslock": "Caps",
+    "enter": "Enter", "lshift": "Shift", "rshift": "Shift", "lctrl": "Ctrl", "rctrl": "Ctrl", "lwin": "Win", "rwin": "Win",
+    "lalt": "Alt", "ralt": "AltGr", "apps": "Menu", "space": "Space", "up": "↑", "down": "↓", "left": "←", "right": "→",
+    "volumeup": "Vol+", "volumedown": "Vol−", "mute": "Mute", "playpause": "Play", "nexttrack": "Next", "previoustrack": "Prev",
+    "mediastop": "Stop", "browserback": "Back", "browserforward": "Fwd", "browserrefresh": "Refresh", "browserhome": "Web", "launchmail": "Mail"
+  },
+  "names": { "ctrl": "ctrl", "alt": "alt", "shift": "shift", "win": "win" },
+  "mods": { "ctrl": "Ctrl", "alt": "Alt", "shift": "Shift", "win": "Win" },
+  "actionsNote": "(Windows keeps some shortcuts, like Alt+Tab, for itself; enter those with the boxes instead of recording.)"
+}

@@ -3,7 +3,8 @@
 const $ = id => document.getElementById(id);
 let state = { base: [], layers: [], actions: [] }, saved = '', current = 'base', validKeys = new Set();
 let allKeyNames = [];
-let builtin = [];  // [{ name, desc, steps }] from config/actions.txt, read-only
+let builtin = [];  // [{ name, desc, steps }] from config/actions.<os>.txt, read-only
 let device = '';   // '' = default config, else a hardware id
 let devices = [];  // [{ id, own, name }]
 let lastKb = '';
+let layout = { rows: [], labels: {}, mods: {}, names: {}, actionsNote: '' };  // web/layouts/<os>.json for the OS the program was built for

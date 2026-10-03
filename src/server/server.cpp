@@ -172,6 +172,7 @@ std::string stepsToText(const Steps& steps) {
     std::string out;
     for (const auto& step : steps) {
         if (!out.empty()) out += ", ";
+        if (step.mods & ModFn) out += "fn+";
         if (step.mods & ModCtrl) out += "ctrl+";
         if (step.mods & ModAlt) out += "alt+";
         if (step.mods & ModShift) out += "shift+";
@@ -215,6 +216,8 @@ void handle(socket_t s, const ServerOptions& opts) {
         for (const auto& n : allKeyNames()) out += n + "\n";
         return respond(s, 200, "OK", "text/plain; charset=utf-8", out);
     }
+    if (req.method == "GET" && req.path == "/api/platform")
+        return respond(s, 200, "OK", "text/plain; charset=utf-8", platform::name());
     if (req.method == "GET" && req.path == "/api/actions") {
         // Built-in actions, one per line: name, description, steps ("ctrl+c, ctrl+v"), default shortcuts, category; tab-separated.
         std::string out;

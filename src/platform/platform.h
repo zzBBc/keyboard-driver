@@ -14,7 +14,11 @@ struct KeyboardInfo {
 
 namespace platform {
 
-// Folder that holds the executable and its data files (web/, actions.txt, mappings.default.txt).
+// "windows" or "macos". Picks this OS's built-in actions (actions.<name>.txt), and the GUI uses it
+// to name keys and draw the keyboard the way this OS does (web/layouts/<name>.json).
+const char* name();
+
+// Folder that holds the executable and its data files (web/, actions.<os>.txt, mappings.default.txt).
 std::string exeDir();
 
 // Keyboards currently attached (one entry per hardware id).

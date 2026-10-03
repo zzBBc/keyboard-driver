@@ -20,6 +20,9 @@ std::string lower(std::string s) {
     return s;
 }
 
+// keymapper never sees the Fn key held, so a shortcut with fn could never fire.
+const char* const kFnShortcut = "fn can only be sent by an action or mapping, not be part of a shortcut";
+
 // "alt+shift+tab" -> {ModAlt|ModShift, VK_TAB}. On failure returns false and sets `err`.
 bool parseChord(const std::string& text, KeyChord& out, std::string& err) {
     std::vector<std::string> parts;
@@ -34,11 +37,13 @@ bool parseChord(const std::string& text, KeyChord& out, std::string& err) {
     KeyChord chord;
     for (size_t i = 0; i + 1 < parts.size(); ++i) {
         const std::string m = lower(parts[i]);
-        if (m == "ctrl") chord.mods |= ModCtrl;
-        else if (m == "alt") chord.mods |= ModAlt;
+        // Mac names work too, on every OS, so one config reads naturally on both.
+        if (m == "ctrl" || m == "control") chord.mods |= ModCtrl;
+        else if (m == "alt" || m == "option" || m == "opt") chord.mods |= ModAlt;
         else if (m == "shift") chord.mods |= ModShift;
-        else if (m == "win") chord.mods |= ModWin;
-        else { err = "unknown modifier '" + parts[i] + "' (use ctrl, alt, shift, win)"; return false; }
+        else if (m == "win" || m == "cmd" || m == "command") chord.mods |= ModWin;
+        else if (m == "fn") chord.mods |= ModFn;
+        else { err = "unknown modifier '" + parts[i] + "' (use ctrl, alt, shift, win, fn; or control, option, cmd)"; return false; }
     }
     auto vk = vkFromName(parts.back());
     if (!vk) { err = "unknown key '" + parts.back() + "'"; return false; }
@@ -163,6 +168,7 @@ bool parseConfig(const std::string& text, Config& out, std::vector<std::string>&
                 KeyChord combo;
                 std::string comboErr;
                 if (!parseChord(trim(line.substr(kShortcut.size())), combo, comboErr)) fail(lineNo, comboErr);
+                else if (combo.mods & ModFn) fail(lineNo, kFnShortcut);
                 else out.actionShortcuts[actionName].push_back(combo);
                 continue;
             }
@@ -194,6 +200,7 @@ bool parseConfig(const std::string& text, Config& out, std::vector<std::string>&
         KeyChord fromChord;
         std::string err;
         if (!parseChord(from, fromChord, err)) { fail(lineNo, err); continue; }
+        if (fromChord.mods & ModFn) { fail(lineNo, kFnShortcut); continue; }
 
         if (scopeLayer < 0) touchedBase.push_back(fromChord);
 
