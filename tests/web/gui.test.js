@@ -137,3 +137,53 @@ test('setTarget adds, replaces and removes by normalised combo', () => {
   run(`setTarget(state.base, 'ctrl+shift+a', '')`);
   assert.deepStrictEqual(JSON.parse(run('JSON.stringify(state.base)')), [['alt+z', '@undo']]);
 });
+
+// ---- per-OS layouts (web/layouts/<os>.json) ----
+
+const layoutsDir = path.join(__dirname, '..', '..', 'web', 'layouts');
+const readLayout = os => fs.readFileSync(path.join(layoutsDir, `${os}.json`), 'utf8');
+
+// Key names the server knows: the quoted names in key_names.cpp plus a-z, 0-9 and f1-f24.
+function serverKeyNames() {
+  const src = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'core', 'key_names.cpp'), 'utf8');
+  const names = new Set([...src.matchAll(/\{"((?:[^"\\]|\\.)+)",\s*key::/g)].map(m => JSON.parse(`"${m[1]}"`)));
+  for (const c of 'abcdefghijklmnopqrstuvwxyz0123456789') names.add(c);
+  for (let i = 1; i <= 24; i++) names.add(`f${i}`);
+  return names;
+}
+
+test('every layout file is well formed and names only real keys', () => {
+  const known = serverKeyNames();
+  const files = fs.readdirSync(layoutsDir).filter(f => f.endsWith('.json'));
+  assert.deepStrictEqual(files.sort(), ['macos.json', 'windows.json']);
+  for (const f of files) {
+    const l = JSON.parse(readLayout(path.basename(f, '.json')));
+    assert.deepStrictEqual(Object.keys(l.mods).sort(), ['alt', 'ctrl', 'shift', 'win'], f);
+    assert.strictEqual(typeof l.actionsNote, 'string', f);
+    const drawn = [];
+    for (const row of l.rows) {
+      assert.ok(Array.isArray(row), f);
+      for (const item of row) {
+        if (typeof item === 'number') continue;  // gap
+        const [name, w] = typeof item === 'string' ? [item, 1] : item;
+        assert.ok(known.has(name), `${f}: unknown key "${name}"`);
+        assert.ok(w > 0, `${f}: bad width for "${name}"`);
+        drawn.push(name);
+      }
+    }
+    assert.strictEqual(new Set(drawn).size, drawn.length, `${f}: a key is drawn twice`);
+    for (const name of Object.keys(l.labels)) assert.ok(known.has(name), `${f}: label for unknown key "${name}"`);
+  }
+});
+
+test('key and modifier labels come from the layout', () => {
+  const run = loadGui();
+  run(`layout = ${readLayout('windows')}`);
+  assert.strictEqual(run(`chordLabel('ctrl+alt+win+q')`), 'Ctrl+Alt+Win+Q');
+  assert.strictEqual(run(`keyLabel('backspace')`), 'Bksp');
+  run(`layout = ${readLayout('macos')}`);
+  assert.strictEqual(run(`chordLabel('ctrl+alt+win+q')`), 'Control+Option+Cmd+Q');
+  assert.strictEqual(run(`keyLabel('backspace')`), 'Delete');
+  assert.strictEqual(run(`keyLabel('insert')`), 'Help');
+  assert.strictEqual(run(`keyLabel('f13')`), 'F13');     // not in the labels: upper-cased name
+});
