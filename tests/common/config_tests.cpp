@@ -273,6 +273,13 @@ TEST(shippedActionListsParse) {
     CHECK(mac.cfg.actions["copy"].size() == 1 && mac.cfg.actions["copy"][0].mods == ModWin);  // Cmd+C
 }
 
+TEST(androidActionListParses) {
+    auto android = parse(sourceFile("config/actions.android.txt"));
+    for (const auto& e : android.errors) std::cerr << "  actions.android.txt: " << e << "\n";
+    CHECK(android.ok && android.errors.empty() && android.cfg.actions.size() == 8);
+    CHECK(android.cfg.actions.count("back") == 1 && android.cfg.actions.count("screenshot") == 1);
+}
+
 TEST(macModifierNamesMeanTheSameModifiers) {
     // cmd/command = win, option/opt = alt, control = ctrl, on every OS.
     auto p = parse("cmd+option+control+shift+q = a\ncommand+opt+w = b\n");

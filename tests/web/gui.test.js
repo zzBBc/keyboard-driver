@@ -163,7 +163,7 @@ function serverKeyNames() {
 test('every layout file is well formed and names only real keys', () => {
   const known = serverKeyNames();
   const files = fs.readdirSync(layoutsDir).filter(f => f.endsWith('.json'));
-  assert.deepStrictEqual(files.sort(), ['macos.json', 'windows.json']);
+  assert.deepStrictEqual(files.sort(), ['android.json', 'macos.json', 'windows.json']);
   for (const f of files) {
     const l = JSON.parse(readLayout(path.basename(f, '.json')));
     // ctrl, alt, shift, win on every OS; fn only where it can be sent (macOS).
