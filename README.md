@@ -202,15 +202,17 @@ The program is a portable core plus one small layer per operating system:
   it with a Quartz event tap, IOHIDManager (to tell keyboards apart) and `CGEventPost`, and AppKit
   for the media keys and opening the browser. Its decisions (macOS key codes to portable ids,
   modifier flags, media key events, which keyboard a key came from) are in `mac_input.cpp`, which
-  uses no Apple API, so the tests cover it on every OS.
+  uses no Apple API, so `tests/macos/` can test it without a keyboard tap.
 - `src/main.cpp`: loads configs, creates the engine, starts the server and the platform hook.
 - `config/`: `actions.txt` (the built-in actions) and `mappings.txt` (the default config).
 - `web/`: the GUI: `index.html`, `css/app.css` and plain scripts in `js/` loaded in order: `state`
   (shared state), `config` (parsing and validation), `keyboard` (keyboard picture and target
   picker), `actions` (Actions tab), `devices` (server calls), `app` (rendering and start-up).
-- `tests/`: C++ tests, one file per area (`config_`, `matcher_`, `keys_`, `engine_`,
-  `static_files_tests.cpp`, and `mac_input_tests.cpp` for the macOS layer) on a tiny shared harness (`harness.h`: write `TEST(name) { CHECK(...); }`
-  and it registers itself); `tests/web/` has the GUI logic tests (Node).
+- `tests/`: C++ tests, one file per area, on a tiny shared harness (`harness.h`: write
+  `TEST(name) { CHECK(...); }` and it registers itself). `tests/common/` (`config_`, `matcher_`,
+  `keys_`, `engine_`, `static_files_tests.cpp`) runs on every OS; `tests/macos/`
+  (`mac_input_tests.cpp`) and `tests/windows/` cover a platform layer and are built on that OS
+  only. `tests/web/` has the GUI logic tests (Node).
 
 To port to another OS (for example Linux), add `src/platform/<os>/` implementing `platform.h` and
 list it in `CMakeLists.txt`. Nothing in `core/`, `server/`, `web/` or the config format changes.

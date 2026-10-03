@@ -52,17 +52,19 @@ add_custom_command(TARGET keymapper POST_BUILD
 
 # Unit tests: build/Release/keymapper_tests.exe (also runnable via `ctest -C Release`).
 enable_testing()
+# tests/common/ runs on every OS; tests/<os>/ covers one platform layer and runs on that OS only.
 add_executable(keymapper_tests
     tests/main.cpp
-    tests/config_tests.cpp
-    tests/matcher_tests.cpp
-    tests/keys_tests.cpp
-    tests/engine_tests.cpp
-    tests/static_files_tests.cpp
-    tests/mac_input_tests.cpp
-    # The macOS layer's decisions use no Apple API, so they are tested on every OS.
-    src/platform/macos/mac_input.cpp
+    tests/common/config_tests.cpp
+    tests/common/matcher_tests.cpp
+    tests/common/keys_tests.cpp
+    tests/common/engine_tests.cpp
+    tests/common/static_files_tests.cpp
 )
-target_include_directories(keymapper_tests PRIVATE tests src/platform/macos)
+target_include_directories(keymapper_tests PRIVATE tests)
 target_link_libraries(keymapper_tests PRIVATE keymapper_core)
+if(APPLE)
+    target_sources(keymapper_tests PRIVATE tests/macos/mac_input_tests.cpp src/platform/macos/mac_input.cpp)
+    target_include_directories(keymapper_tests PRIVATE src/platform/macos)
+endif()
 add_test(NAME keymapper_tests COMMAND keymapper_tests)
