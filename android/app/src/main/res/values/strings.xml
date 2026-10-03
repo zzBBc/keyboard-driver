@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Keymapper</string>
+    <string name="service_description">Reads keys from a hardware keyboard so they can be remapped. Keys are never stored or sent anywhere.</string>
+</resources>

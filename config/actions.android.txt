@@ -1,0 +1,57 @@
+# Built-in actions for Android, loaded by the program on Android (the app packages this file; it is
+# copied to the app's folder on every start, so do not edit that copy). Bind one with "alt+q = @name"
+# in any config, or define an action of the same name in your own config to override it.
+#
+# Android cannot inject keys without root, so an action here runs one of the system's global actions
+# through the accessibility service. Each one is sent as a key that stands for it (see
+# src/platform/android/android_input.h): browserback = Back, browserhome = Home, apps = Recents,
+# launchmail = Notifications, browserrefresh = Quick settings, scrolllock = Power menu,
+# pause = Lock screen, printscreen = Screenshot. A mapping that sends any other key is not applied:
+# the original key goes through unchanged.
+#
+# [action name]
+# description: what it does
+# category: group name in the GUI (optional)
+# step, step        (each step is a key or combo; steps run in order)
+
+# --- System ---
+
+[action back]
+description: Go back
+category: System
+browserback
+
+[action home]
+description: Go to the home screen
+category: System
+browserhome
+
+[action recents]
+description: Open the recent apps
+category: System
+apps
+
+[action notifications]
+description: Open the notification shade
+category: System
+launchmail
+
+[action quick-settings]
+description: Open the quick settings
+category: System
+browserrefresh
+
+[action power-menu]
+description: Open the power menu
+category: System
+scrolllock
+
+[action lock-screen]
+description: Lock the screen
+category: System
+pause
+
+[action screenshot]
+description: Take a screenshot
+category: System
+printscreen

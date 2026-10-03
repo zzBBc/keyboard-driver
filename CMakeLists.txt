@@ -16,14 +16,22 @@ target_include_directories(keymapper_core PUBLIC src/core)
 
 # The program: the core, the local web server, and one platform layer (src/platform/<os>/) that
 # intercepts keys and injects the engine's output. platform.h is the interface a layer implements.
-add_executable(keymapper
-    src/main.cpp
-    src/server/server.cpp
-)
+if(ANDROID)
+    # On Android the program is a shared library that the app (android/) loads: main() becomes
+    # keymapper_main(), which the app's service calls on a thread. web/ and the config files are
+    # packaged as app assets by Gradle instead of being copied next to the program.
+    add_library(keymapper SHARED src/main.cpp src/server/server.cpp)
+    set_source_files_properties(src/main.cpp PROPERTIES COMPILE_DEFINITIONS main=keymapper_main)
+else()
+    add_executable(keymapper src/main.cpp src/server/server.cpp)
+endif()
 target_include_directories(keymapper PRIVATE src/server src/platform)
 target_link_libraries(keymapper PRIVATE keymapper_core)
 
-if(WIN32)
+if(ANDROID)
+    target_sources(keymapper PRIVATE src/platform/android/android_platform.cpp src/platform/android/android_input.cpp)
+    target_include_directories(keymapper PRIVATE src/platform/android)
+elseif(WIN32)
     target_sources(keymapper PRIVATE src/platform/windows/windows_platform.cpp)
     target_compile_definitions(keymapper PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
     target_link_libraries(keymapper PRIVATE ws2_32 hid shell32)
@@ -41,6 +49,7 @@ endif()
 # Next to the exe: the GUI page, the built-in actions, and the default config used on first run.
 # (mappings.txt itself is never overwritten, since the GUI edits it.) The built-in actions send
 # each OS's own shortcuts, so there is one list per OS; the program loads actions.<os>.txt.
+if(NOT ANDROID)
 add_custom_command(TARGET keymapper POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_SOURCE_DIR}/web $<TARGET_FILE_DIR:keymapper>/web
@@ -50,11 +59,15 @@ add_custom_command(TARGET keymapper POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${CMAKE_SOURCE_DIR}/config/actions.windows.txt
             ${CMAKE_SOURCE_DIR}/config/actions.macos.txt
+            ${CMAKE_SOURCE_DIR}/config/actions.android.txt
             $<TARGET_FILE_DIR:keymapper>)
+endif()
 
-# Unit tests: build/Release/keymapper_tests.exe (also runnable via `ctest -C Release`).
+# Unit tests: build/Release/keymapper_tests.exe (also runnable via `ctest -C Release`). Not built for Android.
+if(NOT ANDROID)
 enable_testing()
-# tests/common/ runs on every OS; tests/<os>/ covers one platform layer and runs on that OS only.
+# tests/common/ runs on every OS; tests/<os>/ covers one platform layer and runs on that OS only,
+# except tests/android/, which covers android_input.cpp (no Android API) and so runs everywhere.
 add_executable(keymapper_tests
     tests/main.cpp
     tests/common/config_tests.cpp
@@ -62,8 +75,10 @@ add_executable(keymapper_tests
     tests/common/keys_tests.cpp
     tests/common/engine_tests.cpp
     tests/common/static_files_tests.cpp
+    tests/android/android_input_tests.cpp
+    src/platform/android/android_input.cpp
 )
-target_include_directories(keymapper_tests PRIVATE tests)
+target_include_directories(keymapper_tests PRIVATE tests src/platform/android)
 # So tests can read the shipped config files (config/actions*.txt).
 target_compile_definitions(keymapper_tests PRIVATE KEYMAPPER_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 target_link_libraries(keymapper_tests PRIVATE keymapper_core)
@@ -73,3 +88,4 @@ if(APPLE)
     target_include_directories(keymapper_tests PRIVATE src/platform/macos)
 endif()
 add_test(NAME keymapper_tests COMMAND keymapper_tests)
+endif()
