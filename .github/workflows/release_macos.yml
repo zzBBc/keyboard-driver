@@ -2,7 +2,7 @@ name: Release (macOS)
 
 # Reusable: release.yml calls it next to release_windows.yml on a version tag (v1.2.3) or a manual
 # run of both. A manual run of this workflow releases macOS only.
-# It runs the macOS build and tests (test_macos.yml), packages the app as a zip, and then publishes it
+# It runs the macOS build and tests (.github/actions/test-macos), packages the app as a zip, and then publishes it
 # (publish.yml) to release/macos/<version>/ when there is a version, release/macos/ when there is not.
 on:
   workflow_call:
@@ -15,9 +15,12 @@ on:
 
 jobs:
   test:
-    uses: ./.github/workflows/test_macos.yml
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/test-macos
 
-  # Build once more, only to package: test_macos.yml does not leave anything behind.
+  # Build once more, only to package: the test action does not leave anything behind.
   package:
     needs: test
     runs-on: macos-latest

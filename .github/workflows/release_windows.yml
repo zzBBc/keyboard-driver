@@ -2,7 +2,7 @@ name: Release (Windows)
 
 # Reusable: release.yml calls it next to release_macos.yml on a version tag (v1.2.3) or a manual
 # run of both. A manual run of this workflow releases Windows only.
-# It runs the Windows build and tests (test_windows.yml), packages the app as a zip, and then publishes
+# It runs the Windows build and tests (.github/actions/test-windows), packages the app as a zip, and then publishes
 # it (publish.yml) to release/windows/<version>/ when there is a version, release/windows/ when there
 # is not.
 on:
@@ -16,9 +16,12 @@ on:
 
 jobs:
   test:
-    uses: ./.github/workflows/test_windows.yml
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/test-windows
 
-  # Build once more, only to package: test_windows.yml does not leave anything behind.
+  # Build once more, only to package: the test action does not leave anything behind.
   package:
     needs: test
     runs-on: windows-latest

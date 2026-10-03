@@ -6,7 +6,13 @@ on:
 
 jobs:
   test_windows:
-    uses: ./.github/workflows/test_windows.yml
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/test-windows
 
   test_macos:
-    uses: ./.github/workflows/test_macos.yml
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/test-macos
