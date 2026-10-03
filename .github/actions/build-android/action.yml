@@ -2,8 +2,9 @@ name: Build (Android)
 description: Builds the debug-signed Android APK as keymapper-android.apk and uploads it as the "android" artifact.
 
 # Composite action: the calling job runs on ubuntu-latest and checks out the repo first. It compiles the
-# native library (CMake, through the NDK) and the app with Gradle, without running tests: the portable
-# core and the Android key decisions are tested by the Windows and macOS test jobs (tests/android/).
+# native library (CMake, through the NDK) and the app with Gradle, without running tests: release.yml runs
+# them first in test_android (the portable core and the Android key decisions, tests/android/) and only
+# starts this after they pass.
 # The APK is signed with the debug key, so it installs by sideloading, not from a store.
 runs:
   using: composite
