@@ -302,6 +302,8 @@ bool openUrl(const std::string& url) {
     return reinterpret_cast<INT_PTR>(ShellExecuteW(nullptr, L"open", wide.c_str(), nullptr, nullptr, SW_SHOWNORMAL)) > 32;
 }
 
+const char* name() { return "windows"; }
+
 void adoptConfig(const std::string&, Config&) {}  // the hook does every mapping itself
 
 void requestQuit() {

@@ -65,6 +65,8 @@ working after an update, remove the old entry with **-** in both lists and grant
 - Key names keep their Windows names: `win`/`lwin`/`rwin` is Command, `alt` is Option, `apps` is the
   context-menu key, `insert` is Help. The built-in actions send Windows shortcuts (`win+d`,
   `alt+f4`...), so most of them mean something else on macOS. Bind keys or your own actions there.
+- The GUI uses the Mac names (Control, Option, Cmd, Help, Delete) and a Mac keyboard layout, and
+  leaves out the keys macOS has no code for. The config file still uses the names above.
 
 ## Using the GUI
 
@@ -72,12 +74,13 @@ working after an update, remove the old entry with **-** in both lists and grant
   **Detect** selects the keyboard you typed on last.
 - **Base** tab: mappings that are always active. A **Layer** tab applies only while its key is held.
 - **Keyboard picture**: click a key, then pick what it becomes from the list (actions and keys), or
-  use **Pick on keyboard** and click the key. It includes F13-F24 and the media and browser keys.
-  Tick Ctrl/Alt/Shift/Win first to bind a combo such as Alt+Q. A combo or steps written by hand in
+  use **Pick on keyboard** and click the key. It includes F13-F24 and the media and browser keys
+  (on macOS: F13-F20 and the media keys). Tick Ctrl/Alt/Shift/Win (Control/Option/Shift/Cmd on
+  macOS) first to bind a combo such as Alt+Q. A combo or steps written by hand in
   the config show as "Custom" in the list and are kept.
 - **Actions** tab: every built-in action, grouped by category, with its description and the keys it
   sends. Click **+ Shortcut** on one and press the keys (or tick modifiers and pick a key) to bind it;
-  the keys Windows keeps for itself, like Alt+Tab, can't be recorded in a browser, so use the boxes.
+  the keys the OS keeps for itself, like Alt+Tab (Cmd+Tab on macOS), can't be recorded in a browser, so use the boxes.
   **Remove shortcut** (or a chip's ×) removes only the combo; the action stays. **Change keys** changes
   what an action sends (for example Undo sends `alt+z` instead of `ctrl+z`); **Reset keys** undoes that.
 - **Save** applies the change immediately, no restart needed.

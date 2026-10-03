@@ -14,6 +14,9 @@ struct KeyboardInfo {
 
 namespace platform {
 
+// "windows" or "macos". The GUI uses it to name keys and draw the keyboard the way this OS does.
+const char* name();
+
 // Folder that holds the executable and its data files (web/, actions.txt, mappings.default.txt).
 std::string exeDir();
 

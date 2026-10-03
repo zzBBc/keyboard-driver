@@ -215,6 +215,8 @@ void handle(socket_t s, const ServerOptions& opts) {
         for (const auto& n : allKeyNames()) out += n + "\n";
         return respond(s, 200, "OK", "text/plain; charset=utf-8", out);
     }
+    if (req.method == "GET" && req.path == "/api/platform")
+        return respond(s, 200, "OK", "text/plain; charset=utf-8", platform::name());
     if (req.method == "GET" && req.path == "/api/actions") {
         // Built-in actions, one per line: name, description, steps ("ctrl+c, ctrl+v"), default shortcuts, category; tab-separated.
         std::string out;

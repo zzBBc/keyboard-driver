@@ -43,6 +43,7 @@ async function switchDevice(id) {
 }
 
 async function load() {
+  isMac = (await fetch('/api/platform').then(r => r.text())).trim() === 'macos';
   const keys = await fetch('/api/keys').then(r => r.text());
   const names = keys.split('\n').filter(Boolean);
   validKeys = new Set(names.map(n => n.toLowerCase()));
