@@ -62,7 +62,7 @@ function bindEditor(name) {
   ed.appendChild(rec);
 
   ed.append('or');
-  for (const m of MODS) {
+  for (const m of SHORTCUT_MODS) {
     const l = document.createElement('label'), c = document.createElement('input');
     c.type = 'checkbox'; c.checked = bind.mods.includes(m);
     c.onchange = () => { bind.mods = c.checked ? [...bind.mods, m] : bind.mods.filter(x => x !== m); render(); };
@@ -125,7 +125,7 @@ function stepEditor(name, info) {
     rec.textContent = edit.rec === i ? 'Press the keys\u2026 (Esc cancels)' : 'Record';
     rec.onclick = () => { edit.rec = edit.rec === i ? -1 : i; render(); };
     row.append(lbl, rec, 'or');
-    for (const m of MODS) {
+    for (const m of MODS.filter(x => layout.mods[x])) {  // only the modifiers this OS has (Fn: macOS)
       const l = document.createElement('label'), c = document.createElement('input');
       c.type = 'checkbox'; c.checked = st.mods.includes(m);
       c.onchange = () => { st.mods = c.checked ? [...st.mods, m] : st.mods.filter(x => x !== m); render(); };

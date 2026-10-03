@@ -66,6 +66,8 @@ working after an update, remove the old entry with **-** in both lists and grant
   mean the same as `win`, `alt`, `ctrl`, which also work, and the GUI writes the Mac names. Key
   names keep their Windows names: `lwin`/`rwin` is Command, `lalt`/`ralt` is Option, `apps` is the
   context-menu key, `insert` is Help.
+- `fn` is the Fn (Globe) key. A step can send it (`fn+control+left` tiles the window left), but a
+  shortcut can't use it: keymapper never sees Fn pressed, so the config rejects `fn+x = ...`.
 - The built-in actions come from `config/actions.macos.txt` and send Mac shortcuts (`cmd+w`,
   `control+up`...) under the same names as on Windows, so a config that binds `@close-window`
   works on both.
@@ -121,7 +123,8 @@ l = right
 
 `from` can be a combo (modifiers `ctrl`, `alt`, `shift`, `win`, or the Mac names `control`, `option`,
 `cmd`, plus one key) and `to` can be a key, a
-combo, comma-separated steps, or `@action`. An action is a named list of steps, defined once and
+combo, comma-separated steps, or `@action`. A combo in `to` can also hold `fn` (macOS only; ignored on
+Windows, which has no Fn key). An action is a named list of steps, defined once and
 bound anywhere:
 
 ```
@@ -150,22 +153,25 @@ ctrl+c, ctrl+v               # steps run in order
   writes the `none` line. The shipped action lists declare no defaults at the moment.
 - Defining an action with the same name as a built-in one in your config overrides it.
 
-**Built-in actions** (`config/actions.windows.txt` on Windows) are 49 common shortcuts in five categories:
+**Built-in actions** (`config/actions.windows.txt` on Windows) are 55 common shortcuts in five categories:
 - *Windows and desktops:* `switch-window`, `previous-window`, `task-view`, `close-window`, `quit-app`,
-  `show-desktop`, `lock-screen`, `snap-left`, `next-desktop`, ...
+  `show-desktop`, `lock-screen`, `snap-left`, `maximize-window`, `full-screen`, `next-desktop`, ...
 - *Media and browser:* `volume-up`, `volume-down`, `mute`, `play-pause`, `next-track`,
   `previous-track`, `stop-media`, `browser-back`/`-forward`/`-refresh`/`-home`, `launch-mail`.
 - *Launch:* `file-explorer`, `run-dialog`, `screenshot-screen`, `screenshot-region` (each also as
-  `-clipboard`), `screenshot-tool`, `emoji-picker`, `clipboard-history`.
+  `-clipboard`), `screenshot-tool`, `emoji-picker`, `clipboard-history`, `app-launcher`,
+  `control-center`, `notification-center`, `focus-dock`, `focus-menu-bar`.
 - *Editing:* `copy`, `cut`, `paste`, `undo`, `redo`, `select-all`, ...
 - *Tabs:* `next-tab`, `previous-tab`, `new-tab`, `close-tab`, `reopen-tab`.
 
-On macOS the list is `config/actions.macos.txt` (45 actions): the same names with Mac shortcuts
-(`task-view` opens Mission Control, `run-dialog` opens Spotlight, `copy` sends `cmd+c`...), plus
-`next-app-window` and `hide-app`, which Windows has no shortcut for. Actions macOS has no shortcut
-for (`snap-left`/`-right`, `new-desktop`, `clipboard-history`, `stop-media`, `launch-mail`) are left
-out: window tiling needs the Fn (Globe) key, which keymapper can't send, and macOS has no stop or
-mail key.
+On macOS the list is `config/actions.macos.txt` (62 actions): the same names with Mac shortcuts
+(`task-view` opens Mission Control, `run-dialog` opens Spotlight, `copy` sends `cmd+c`,
+`control-center` sends `fn+c`...), plus what Windows has no shortcut for: `next-app-window`,
+`hide-app`, `quick-note`, and macOS 15's window tiling (`snap-top`/`-bottom`,
+`arrange-left-right`/`-right-left`/`-top-bottom`/`-bottom-top`, `center-window`, `restore-window`;
+`snap-left`/`-right` and `maximize-window` tile too). Many of these send the Fn (Globe) key, like
+`fn+control+left`. Actions macOS has no shortcut for (`new-desktop`, `clipboard-history`,
+`stop-media`, `launch-mail`) are left out.
 
 None has a default shortcut. The GUI chooses actions from these lists and does not create new ones;
 to define your own, write an `[action ...]` block in the config file. The media actions send the same
@@ -251,8 +257,9 @@ The program is a portable core plus one small layer per operating system:
 - `tests/`: C++ tests, one file per area, on a tiny shared harness (`harness.h`: write
   `TEST(name) { CHECK(...); }` and it registers itself). `tests/common/` (`config_`, `matcher_`,
   `keys_`, `engine_`, `static_files_tests.cpp`) runs on every OS; `tests/macos/`
-  (`mac_input_tests.cpp`) and `tests/windows/` cover a platform layer and are built on that OS
-  only. `tests/web/` has the GUI logic tests (Node).
+  (`mac_input_tests.cpp`, and `fn_tests.cpp` for the `fn` modifier only macOS can send) and
+  `tests/windows/` cover a platform layer and are built on that OS only. `tests/web/` has the GUI
+  logic tests (Node).
 
 To port to another OS (for example Linux), add `src/platform/<os>/` implementing `platform.h` and
 list it in `CMakeLists.txt`. Nothing in `core/`, `server/`, `web/` or the config format changes.

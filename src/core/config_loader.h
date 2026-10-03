@@ -7,7 +7,9 @@
 // virtual-key (from) -> virtual-key (to)
 using KeyMap = std::unordered_map<unsigned short, unsigned short>;
 
-enum Mod : unsigned { ModCtrl = 1, ModAlt = 2, ModShift = 4, ModWin = 8 };
+// ModFn (macOS's Fn/Globe key) can only be sent by a step: keymapper never sees Fn held, so a combo
+// with it can't be a shortcut.
+enum Mod : unsigned { ModCtrl = 1, ModAlt = 2, ModShift = 4, ModWin = 8, ModFn = 16 };
 
 // Modifiers held together with one key, e.g. Alt+Tab = {ModAlt, VK_TAB}.
 struct KeyChord {

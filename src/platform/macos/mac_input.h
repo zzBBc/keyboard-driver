@@ -28,13 +28,16 @@ constexpr Flags kAllModifierFlags = kFlagShift | kFlagControl | kFlagAlternate |
 
 // macOS virtual key code (kVK_*) <-> portable key id (keycodes.h). Win = Command, Alt = Option.
 // Keys macOS has no code for (PrintScreen, ScrollLock, Pause, F21-F24, the browser keys...) map to nothing.
+// Fn (key::Fn) is send only: macFromKey gives kVK_Function, but keyFromMac never reports a physical
+// Fn, so laptops' Fn+arrow (Home, End...) and mappings on those keys work as before.
 std::optional<unsigned short> keyFromMac(uint16_t code);
 std::optional<uint16_t> macFromKey(unsigned short key);
 
 // HID keyboard page usage (what IOHIDManager reports) -> portable key id.
 std::optional<unsigned short> keyFromHid(uint32_t usage);
 
-// Generic and left/right flag bits of a modifier key code; 0 for any other key (Caps Lock and Fn too).
+// Generic and left/right flag bits of a modifier key code (Fn: SecondaryFn only); 0 for any other
+// key (Caps Lock too).
 Flags modifierFlags(uint16_t code);
 
 // Flags macOS sets on real events for this key (arrows: numeric pad + Fn; F-keys, Home...: Fn).

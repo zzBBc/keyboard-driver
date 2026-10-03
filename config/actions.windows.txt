@@ -2,7 +2,8 @@
 # shown in the GUI. The build copies this file next to the exe; do not edit that copy (it is
 # replaced on every build). Bind one with "alt+q = @name" in any config, or define an action of the
 # same name in your own config to override it. Keep the names in step with actions.macos.txt: an
-# action Windows has no shortcut for (hide-app, next-app-window) is left out.
+# action Windows has no shortcut for (hide-app, next-app-window, quick-note, and macOS's window
+# tiling: snap-top/-bottom, arrange-*, center-window, restore-window) is left out.
 #
 # [action name]
 # description: what it does
@@ -65,6 +66,11 @@ win+right
 description: Maximize the window
 category: Windows and desktops
 win+up
+
+[action full-screen]
+description: Enter or leave full screen (browsers, File Explorer...)
+category: Windows and desktops
+f11
 
 [action minimize-window]
 description: Minimize the window
@@ -196,6 +202,31 @@ win+.
 description: Open the clipboard history
 category: Launch
 win+v
+
+[action app-launcher]
+description: Open the Start menu
+category: Launch
+lwin
+
+[action control-center]
+description: Open Quick Settings (Wi-Fi, sound, brightness...)
+category: Launch
+win+a
+
+[action notification-center]
+description: Open the notification center
+category: Launch
+win+n
+
+[action focus-dock]
+description: Move the keyboard focus to the taskbar
+category: Launch
+win+t
+
+[action focus-menu-bar]
+description: Move the keyboard focus to the app's menu bar
+category: Launch
+f10
 
 # --- Editing ---
 

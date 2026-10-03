@@ -5,8 +5,8 @@
 #
 # Same names as the Windows actions, so a config binding @close-window works on both. Modifiers use
 # the Mac names: cmd, option, control, shift (win, alt and ctrl mean the same and work too). Key
-# names keep their Windows names (lwin is the left Command key). An action keymapper can't do on
-# macOS is left out: snap-left/-right (tiling needs the Fn/Globe key, which can't be sent), new-desktop
+# names keep their Windows names (lwin is the left Command key); fn is the Fn/Globe key, which a step
+# can send but a shortcut can't use. An action keymapper can't do on macOS is left out: new-desktop
 # (no shortcut), clipboard-history (none before macOS 26), stop-media and launch-mail (no such key).
 #
 # [action name]
@@ -66,7 +66,62 @@ description: Open Force Quit Applications
 category: Windows and desktops
 cmd+option+esc
 
+[action snap-left]
+description: Tile the window on the left half (macOS 15 or later)
+category: Windows and desktops
+fn+control+left
+
+[action snap-right]
+description: Tile the window on the right half (macOS 15 or later)
+category: Windows and desktops
+fn+control+right
+
+[action snap-top]
+description: Tile the window on the top half (macOS 15 or later)
+category: Windows and desktops
+fn+control+up
+
+[action snap-bottom]
+description: Tile the window on the bottom half (macOS 15 or later)
+category: Windows and desktops
+fn+control+down
+
+[action arrange-left-right]
+description: Arrange the two front windows side by side, this one on the left (macOS 15 or later)
+category: Windows and desktops
+fn+control+shift+left
+
+[action arrange-right-left]
+description: Arrange the two front windows side by side, this one on the right (macOS 15 or later)
+category: Windows and desktops
+fn+control+shift+right
+
+[action arrange-top-bottom]
+description: Arrange the two front windows one above the other, this one on top (macOS 15 or later)
+category: Windows and desktops
+fn+control+shift+up
+
+[action arrange-bottom-top]
+description: Arrange the two front windows one above the other, this one at the bottom (macOS 15 or later)
+category: Windows and desktops
+fn+control+shift+down
+
+[action center-window]
+description: Center the window (macOS 15 or later)
+category: Windows and desktops
+fn+control+c
+
+[action restore-window]
+description: Return the window to its size before tiling (macOS 15 or later)
+category: Windows and desktops
+fn+control+r
+
 [action maximize-window]
+description: Fill the screen with the window (macOS 15 or later)
+category: Windows and desktops
+fn+control+f
+
+[action full-screen]
 description: Enter or leave full screen
 category: Windows and desktops
 control+cmd+f
@@ -181,6 +236,36 @@ cmd+shift+5
 description: Open the emoji picker
 category: Launch
 control+cmd+space
+
+[action app-launcher]
+description: Open Launchpad
+category: Launch
+fn+shift+a
+
+[action control-center]
+description: Open Control Center
+category: Launch
+fn+c
+
+[action notification-center]
+description: Open Notification Center
+category: Launch
+fn+n
+
+[action focus-dock]
+description: Move the keyboard focus to the Dock
+category: Launch
+fn+a
+
+[action focus-menu-bar]
+description: Move the keyboard focus to the menu bar
+category: Launch
+fn+m
+
+[action quick-note]
+description: Start a Quick Note
+category: Launch
+fn+q
 
 # --- Editing ---
 

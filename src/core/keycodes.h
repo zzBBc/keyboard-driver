@@ -66,6 +66,7 @@ enum : unsigned short {
     Backslash = 0xDC,
     RightBracket = 0xDD,
     Quote = 0xDE,
+    Fn = 0xFF,  // not a Windows key: only sent (the fn modifier of a step), and only macOS can send it
 };
 
 }  // namespace key

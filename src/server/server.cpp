@@ -172,6 +172,7 @@ std::string stepsToText(const Steps& steps) {
     std::string out;
     for (const auto& step : steps) {
         if (!out.empty()) out += ", ";
+        if (step.mods & ModFn) out += "fn+";
         if (step.mods & ModCtrl) out += "ctrl+";
         if (step.mods & ModAlt) out += "alt+";
         if (step.mods & ModShift) out += "shift+";

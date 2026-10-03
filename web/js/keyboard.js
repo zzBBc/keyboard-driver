@@ -18,7 +18,7 @@ function buildKeyboard(list, trigger) {
   // Modifier checkboxes: pick Alt, then click Q to edit "alt+q".
   const mods = document.createElement('div'); mods.className = 'kmods';
   mods.append('With:');
-  for (const m of MODS) {
+  for (const m of SHORTCUT_MODS) {
     const l = document.createElement('label'), c = document.createElement('input');
     c.type = 'checkbox'; c.checked = selMods.includes(m);
     c.onchange = () => { selMods = c.checked ? [...selMods, m] : selMods.filter(x => x !== m); picking = false; render(); };

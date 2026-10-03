@@ -1,7 +1,9 @@
 // Config text <-> GUI state, key/chord helpers and validation.
-const MODS = ['ctrl', 'alt', 'shift', 'win'];  // modifier ids, in the order a combo lists them
+const MODS = ['fn', 'ctrl', 'alt', 'shift', 'win'];  // modifier ids, in the order a combo lists them
+// fn (the Fn/Globe key) can only be sent: keymapper never sees it held, so a shortcut can't use it.
+const SHORTCUT_MODS = MODS.filter(m => m !== 'fn');
 // Every name the config accepts for a modifier (same as the server): the Mac names work on any OS.
-const MOD_ALIASES = { ctrl: 'ctrl', control: 'ctrl', alt: 'alt', option: 'alt', opt: 'alt', shift: 'shift', win: 'win', cmd: 'win', command: 'win' };
+const MOD_ALIASES = { ctrl: 'ctrl', control: 'ctrl', alt: 'alt', option: 'alt', opt: 'alt', shift: 'shift', win: 'win', cmd: 'win', command: 'win', fn: 'fn' };
 const modId = name => MOD_ALIASES[name];
 // The name the GUI writes into the config for a modifier id: this OS's (layout.names), e.g. cmd on macOS.
 const modName = m => (layout.names && layout.names[m]) || m;
@@ -57,12 +59,13 @@ function normChord(str) {
   const key = parts.pop();
   return comboText(parts.map(modId), key);
 }
-function validChord(str) {
+// A shortcut (the "from" side) can't hold fn; something sent (`canSend`) can.
+function validChord(str, canSend = false) {
   const parts = str.split('+').map(x => x.trim().toLowerCase());
   const key = parts.pop();
-  return !!key && (validKeys.size === 0 || validKeys.has(key)) && parts.every(modId);
+  return !!key && (validKeys.size === 0 || validKeys.has(key)) && parts.every(p => modId(p) && (canSend || modId(p) !== 'fn'));
 }
-function validSteps(str) { return !!str && (validChord(str) || str.split(',').every(x => validChord(x))); }
+function validSteps(str) { return !!str && (validChord(str, true) || str.split(',').every(x => validChord(x, true))); }
 // Built-in actions grouped by the category: line in config/actions.<os>.txt, in the order the file lists them.
 function builtinGroups() {
   const groups = [];
