@@ -238,3 +238,32 @@ TEST(macAttributorKeepsABoundedQueue) {
     for (size_t i = 0; i < mac::Attributor::kMaxPending; ++i) a.hid('B', false, "K2", t);
     CHECK(a.attribute('A', false, t) == "K2");  // the oldest entry was dropped
 }
+
+TEST(macCapsLockMappingsMoveToTheHidSystem) {
+    KeyMap map{{key::Tab, key::CapsLock}, {key::CapsLock, key::Tab}, {'A', 'B'}};
+    const auto hid = mac::takeCapsLockMappings(map);
+    CHECK(hid.size() == 2);
+    CHECK(hid[0] == (mac::HidMapping{0x70000002B, 0x700000039}));  // Tab -> Caps Lock
+    CHECK(hid[1] == (mac::HidMapping{0x700000039, 0x70000002B}));  // Caps Lock -> Tab
+    CHECK(map.size() == 1 && map.at('A') == 'B');                  // the tap still does the rest
+}
+
+TEST(macCapsLockToEitherSideModifierUsesTheLeftKey) {
+    KeyMap map{{key::CapsLock, key::Ctrl}};
+    const auto hid = mac::takeCapsLockMappings(map);
+    CHECK(hid.size() == 1 && hid[0] == (mac::HidMapping{0x700000039, 0x7000000E0}));
+    CHECK(map.empty());
+}
+
+TEST(macCapsLockToAKeyMacOsLacksStaysPut) {
+    KeyMap map{{key::CapsLock, key::PrintScreen}};
+    CHECK(mac::takeCapsLockMappings(map).empty());
+    CHECK(map.size() == 1);
+}
+
+TEST(macUserKeyMappingJson) {
+    CHECK(mac::userKeyMappingJson({}) == "{\"UserKeyMapping\":[]}");
+    CHECK(mac::userKeyMappingJson({{0x700000039, 0x70000002B}}) ==
+          "{\"UserKeyMapping\":[{\"HIDKeyboardModifierMappingSrc\":30064771129,"
+          "\"HIDKeyboardModifierMappingDst\":30064771115}]}");
+}
