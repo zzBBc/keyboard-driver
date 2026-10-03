@@ -1,5 +1,5 @@
 // The macOS layer's decisions: key code tables, modifier flags, media keys, keyboard ids and which
-// keyboard an event came from. Plain C++, so these run on every OS.
+// keyboard an event came from. Built on macOS only, like the rest of tests/macos/.
 #include "harness.h"
 
 #include "keycodes.h"
