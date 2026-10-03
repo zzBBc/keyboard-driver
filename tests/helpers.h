@@ -42,6 +42,13 @@ inline constexpr const char* kLibWithDefault =
     "[action copy]\n"
     "ctrl+c\n";
 
+// A shipped file from the source tree, e.g. "config/actions.macos.txt" ("" if it can't be read).
+inline std::string sourceFile(const std::string& relPath) {
+    std::string text;
+    readFile(std::string(KEYMAPPER_SOURCE_DIR) + "/" + relPath, text);
+    return text;
+}
+
 inline Parsed parseWithLibrary(const std::string& text, const Config& lib) {
     Parsed p;
     p.ok = parseConfig(text, p.cfg, p.errors, &lib);

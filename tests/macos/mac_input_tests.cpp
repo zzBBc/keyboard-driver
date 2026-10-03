@@ -1,6 +1,7 @@
 // The macOS layer's decisions: key code tables, modifier flags, media keys, keyboard ids and which
 // keyboard an event came from. Built on macOS only, like the rest of tests/macos/.
 #include "harness.h"
+#include "helpers.h"
 
 #include "keycodes.h"
 #include "mac_input.h"
@@ -266,4 +267,17 @@ TEST(macUserKeyMappingJson) {
     CHECK(mac::userKeyMappingJson({{0x700000039, 0x70000002B}}) ==
           "{\"UserKeyMapping\":[{\"HIDKeyboardModifierMappingSrc\":30064771129,"
           "\"HIDKeyboardModifierMappingDst\":30064771115}]}");
+}
+
+TEST(macActionListSendsOnlyKeysMacOSHas) {
+    // Every step of the shipped macOS actions must be a key macOS can post (a key code or a media
+    // event); a key without one would make the action do nothing.
+    auto p = parse(sourceFile("config/actions.macos.txt"));
+    CHECK(p.ok && !p.cfg.actions.empty());
+    for (const auto& [name, steps] : p.cfg.actions)
+        for (const auto& step : steps) {
+            const bool sendable = mac::macFromKey(step.key) || mac::mediaFromKey(step.key);
+            if (!sendable) std::cerr << "  " << name << ": key " << step.key << " has no macOS code\n";
+            CHECK(sendable);
+        }
 }
