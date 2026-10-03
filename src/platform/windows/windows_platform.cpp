@@ -302,6 +302,8 @@ bool openUrl(const std::string& url) {
     return reinterpret_cast<INT_PTR>(ShellExecuteW(nullptr, L"open", wide.c_str(), nullptr, nullptr, SW_SHOWNORMAL)) > 32;
 }
 
+void adoptConfig(const std::string&, Config&) {}  // the hook does every mapping itself
+
 void requestQuit() {
     g_quitRequested = true;
     if (g_mainThread) PostThreadMessageW(g_mainThread, WM_QUIT, 0, 0);

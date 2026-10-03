@@ -8,17 +8,21 @@
 #include <ApplicationServices/ApplicationServices.h>
 #include <IOKit/hid/IOHIDLib.h>
 #include <IOKit/hidsystem/IOHIDLib.h>  // IOHIDRequestAccess
+#include <crt_externs.h>  // _NSGetEnviron
 #include <mach-o/dyld.h>
 
 #include <dispatch/dispatch.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <spawn.h>
 #include <sys/file.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <iostream>
@@ -48,6 +52,34 @@ std::atomic<bool> g_quitRequested{false};
 std::mutex g_hidMutex;  // guards g_attributor: the HID thread fills it, the tap thread reads it
 mac::Attributor g_attributor;
 mac::ModifierState g_mods;  // tap thread only
+
+std::mutex g_hidutilMutex;           // guards g_hidMappings: configs arrive from the server thread too
+std::vector<mac::HidMapping> g_hidMappings;  // what we last set with hidutil
+
+// Sets the HID system's key mapping for every keyboard. Kept until changed, or until the Mac restarts.
+void setHidMappings(const std::vector<mac::HidMapping>& mappings) {
+    std::lock_guard<std::mutex> lock(g_hidutilMutex);
+    if (mappings == g_hidMappings) return;  // never touch a mapping set by hand unless we set one
+    const std::string json = mac::userKeyMappingJson(mappings);
+    const char* argv[] = {"/usr/bin/hidutil", "property", "--set", json.c_str(), nullptr};
+    posix_spawn_file_actions_t actions;
+    posix_spawn_file_actions_init(&actions);
+    posix_spawn_file_actions_addopen(&actions, STDOUT_FILENO, "/dev/null", O_WRONLY, 0);  // it echoes the mapping
+    pid_t pid = 0;
+    int status = 0;
+    const bool ok = posix_spawn(&pid, argv[0], &actions, nullptr, const_cast<char* const*>(argv), *_NSGetEnviron()) == 0 &&
+                    waitpid(pid, &status, 0) == pid && WIFEXITED(status) && WEXITSTATUS(status) == 0;
+    posix_spawn_file_actions_destroy(&actions);
+    if (!ok) {
+        std::cerr << "hidutil could not set the Caps Lock mappings.\n";
+        return;
+    }
+    if (g_hidMappings.empty()) {
+        static bool registered = false;  // on any exit, Caps Lock and the keys it was swapped with act normally again
+        if (!registered) registered = std::atexit([] { setHidMappings({}); }) == 0;
+    }
+    g_hidMappings = mappings;
+}
 
 int numberProperty(IOHIDDeviceRef device, CFStringRef key) {
     int value = 0;
@@ -245,6 +277,13 @@ bool openUrl(const std::string& url) {
         NSURL* u = [NSURL URLWithString:[NSString stringWithUTF8String:url.c_str()]];
         return u && [[NSWorkspace sharedWorkspace] openURL:u];
     }
+}
+
+void adoptConfig(const std::string& deviceId, Config& cfg) {
+    auto mappings = mac::takeCapsLockMappings(cfg.base.map);
+    if (deviceId.empty()) return setHidMappings(mappings);
+    if (!mappings.empty())  // the HID system's mapping is the same for every keyboard
+        std::cerr << "Keyboard config " << deviceId << ": Caps Lock mappings only work in the default config.\n";
 }
 
 void requestQuit() {

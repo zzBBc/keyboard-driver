@@ -8,6 +8,9 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <vector>
+
+#include "config_loader.h"
 
 namespace mac {
 
@@ -51,6 +54,18 @@ MediaKey decodeMedia(long data1);
 long encodeMedia(int nx, bool up);
 std::optional<unsigned short> keyFromMedia(int nx);
 std::optional<int> mediaFromKey(unsigned short key);  // a key sent as a media event, not a key code
+
+// The event tap never sees Caps Lock and can't send it, so plain mappings with Caps Lock on either side
+// are done by the HID system instead (hidutil's UserKeyMapping). Values are HID usages (page 7 << 32 | usage).
+struct HidMapping {
+    uint64_t src;
+    uint64_t dst;
+    bool operator==(const HidMapping& o) const { return src == o.src && dst == o.dst; }
+};
+// Moves the Caps Lock mappings out of `map`, sorted by source. A key without a HID usage stays in `map`.
+std::vector<HidMapping> takeCapsLockMappings(KeyMap& map);
+// The value for `hidutil property --set`.
+std::string userKeyMappingJson(const std::vector<HidMapping>& mappings);
 
 // Same id format as on Windows, so a keyboard's config file works on both: "VID_046D&PID_C52B".
 std::string deviceId(int vendorId, int productId);

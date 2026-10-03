@@ -2,6 +2,7 @@
 
 #include "keycodes.h"
 
+#include <algorithm>
 #include <cstdio>
 
 namespace mac {
@@ -121,6 +122,19 @@ constexpr MediaRow kMedia[] = {
 
 constexpr int kMediaDown = 0xA, kMediaUp = 0xB;
 
+constexpr uint32_t kHidCapsLock = 0x39;
+constexpr uint64_t kHidKeyboardPage = 0x700000000;
+
+// HID usage of a key; an either-side modifier (Ctrl...) uses its left key's.
+std::optional<uint32_t> hidFromKey(unsigned short key) {
+    if (key == key::CapsLock) return kHidCapsLock;
+    const auto code = macFromKey(key);
+    if (!code) return std::nullopt;
+    for (const auto& r : kKeys)
+        if (r.mac == *code && r.hid) return r.hid;
+    return std::nullopt;
+}
+
 void setHeld(std::set<uint16_t>& mods, uint16_t code, bool held) {
     if (held) mods.insert(code);
     else mods.erase(code);
@@ -196,6 +210,31 @@ std::optional<int> mediaFromKey(unsigned short key) {
     for (const auto& m : kMedia)
         if (m.key == key) return m.nx;
     return std::nullopt;
+}
+
+std::vector<HidMapping> takeCapsLockMappings(KeyMap& map) {
+    std::vector<HidMapping> out;
+    for (auto it = map.begin(); it != map.end();) {
+        const auto src = hidFromKey(it->first), dst = hidFromKey(it->second);
+        if ((it->first == key::CapsLock || it->second == key::CapsLock) && src && dst) {
+            out.push_back({kHidKeyboardPage | *src, kHidKeyboardPage | *dst});
+            it = map.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    std::sort(out.begin(), out.end(), [](const HidMapping& a, const HidMapping& b) { return a.src < b.src; });
+    return out;
+}
+
+std::string userKeyMappingJson(const std::vector<HidMapping>& mappings) {
+    std::string json = "{\"UserKeyMapping\":[";
+    for (size_t i = 0; i < mappings.size(); ++i) {
+        if (i) json += ",";
+        json += "{\"HIDKeyboardModifierMappingSrc\":" + std::to_string(mappings[i].src) +
+                ",\"HIDKeyboardModifierMappingDst\":" + std::to_string(mappings[i].dst) + "}";
+    }
+    return json + "]}";
 }
 
 std::string deviceId(int vendorId, int productId) {

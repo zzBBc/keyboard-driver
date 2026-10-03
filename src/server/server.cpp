@@ -286,6 +286,7 @@ void handle(socket_t s, const ServerOptions& opts) {
             }
             if (!writeFile(file, req.body))
                 return respond(s, 500, "Error", "text/plain", "cannot write " + file);
+            platform::adoptConfig(device, *cfg);
             opts.engine->setConfig(device, std::move(cfg));
             return respond(s, 200, "OK", "text/plain", "ok");
         }

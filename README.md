@@ -161,9 +161,12 @@ events are matched to hook events by scan code and timing.
   prompts or the login screen.
 - No numpad key names yet. Names follow Windows virtual-key codes, so punctuation names refer to the
   key positions of a US layout.
-- macOS: Caps Lock and Fn can't be remapped. macOS toggles Caps Lock before any program sees the
-  key, and reports no release for it. To change Caps Lock, use System Settings > Keyboard >
-  Keyboard Shortcuts > Modifier Keys. PrintScreen, ScrollLock, Pause, F21-F24, `mediastop` and the
+- macOS: macOS toggles Caps Lock before any program sees the key, so plain mappings to or from
+  Caps Lock (`capslock = tab`, `tab = capslock`) are handed to the HID system with `hidutil`
+  instead. They apply to every keyboard, only work in the default config, and replace any mapping
+  you set with `hidutil` yourself; quitting keymapper clears them (after a crash, run
+  `hidutil property --set '{"UserKeyMapping":[]}'` or restart). Caps Lock can't be a layer key,
+  and Fn can't be remapped. PrintScreen, ScrollLock, Pause, F21-F24, `mediastop` and the
   browser and mail keys have no macOS key, so they are never seen and sending them does nothing.
 - There is no Linux platform layer yet.
 
