@@ -2,7 +2,7 @@ name: Build and test (Windows)
 description: Builds the app on Windows and runs both test suites, and nothing else (no packaging).
 
 # Composite action: the calling job runs on windows-latest and checks out the repo first.
-# pr.yml and build-windows call it (`uses: ./.github/actions/test-windows`), so a pull
+# pr.yml and release.yml call it (`uses: ./.github/actions/test-windows`), so a pull
 # request and a release are tested the same way.
 runs:
   using: composite

@@ -2,9 +2,9 @@ name: Release
 
 # Runs on a version tag (v1.2.3) or a manual run. A plain push to a branch (master included) does not
 # start it, and pull requests have their own workflow (pr.yml).
-# It tests and packages Windows and macOS side by side (one failing stops the release), then publishes
-# both zips in a single commit to release/<os>/<version>/ when there is a version, release/<os>/ when
-# there is not.
+# It tests Windows and macOS side by side, packages each OS once its tests pass (one failing stops the
+# release), then publishes both zips in a single commit to release/<os>/<version>/ when there is a
+# version, release/<os>/ when there is not.
 on:
   push:
     tags: ['v*']
@@ -16,13 +16,27 @@ on:
         default: ''
 
 jobs:
+  test_windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/test-windows
+
+  test_macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/test-macos
+
   build_windows:
+    needs: test_windows
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/build-windows
 
   build_macos:
+    needs: test_macos
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4

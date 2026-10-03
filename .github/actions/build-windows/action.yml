@@ -1,13 +1,19 @@
 name: Build (Windows)
 description: Packages the Windows app as keymapper-windows.zip and uploads it as the "windows" artifact.
 
-# Composite action: the calling job runs on windows-latest and checks out the repo first. It runs the tests
-# (.github/actions/test-windows) before packaging, so nothing untested is released, and packages the
-# Release build the tests leave in build/. release.yml calls it.
+# Composite action: the calling job runs on windows-latest and checks out the repo first. It builds the
+# Release app and packages it, without running tests: release.yml runs them first in test_windows and
+# only starts this after they pass.
 runs:
   using: composite
   steps:
-    - uses: ./.github/actions/test-windows
+    - name: Configure
+      shell: bash
+      run: cmake -S . -B build
+
+    - name: Build (Release)
+      shell: bash
+      run: cmake --build build --config Release
 
     # The build leaves everything the app needs next to the exe (web/, actions.windows.txt,
     # mappings.default.txt); pick just those, not the test binary or the static library.
