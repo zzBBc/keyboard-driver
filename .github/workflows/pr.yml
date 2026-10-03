@@ -16,3 +16,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/test-macos
+
+  # The one check the "master requires the PR check" ruleset waits for: passes when both OSes pass.
+  pr:
+    needs: [test_windows, test_macos]
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Both OSes passed"
