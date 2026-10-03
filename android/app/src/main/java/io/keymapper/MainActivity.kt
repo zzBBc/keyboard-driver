@@ -42,7 +42,8 @@ class MainActivity : Activity() {
     }
 
     private fun showGui() {
-        if (web != null) return
+        // Coming back to the app: load the page again, so it shows the current actions, keyboards and config.
+        web?.let { it.reload(); return }
         web = WebView(this).apply {
             setBackgroundColor(Color.WHITE)
             settings.javaScriptEnabled = true

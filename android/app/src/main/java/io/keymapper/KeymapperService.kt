@@ -21,12 +21,17 @@ class KeymapperService : AccessibilityService(), InputManager.InputDeviceListene
         copyAssets()
         refreshKeyboards()
         (getSystemService(Context.INPUT_SERVICE) as InputManager).registerInputDeviceListener(this, null)
-        Thread {
-            NativeBridge.run(filesDir.absolutePath)  // returns after the GUI's Stop button
-            // The GUI server cannot be restarted in this process, so end it; the user turns the service on again.
-            disableSelf()
-            Process.killProcess(Process.myPid())
-        }.start()
+        // Turning the service off and on again in Settings reconnects it in the same process, where the
+        // program (engine and GUI server) is still running: start it only once.
+        if (!nativeStarted) {
+            nativeStarted = true
+            Thread {
+                NativeBridge.run(filesDir.absolutePath)  // returns after the GUI's Stop button
+                // The GUI server cannot be restarted in this process, so end it; the user turns the service on again.
+                disableSelf()
+                Process.killProcess(Process.myPid())
+            }.start()
+        }
     }
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
@@ -77,6 +82,9 @@ class KeymapperService : AccessibilityService(), InputManager.InputDeviceListene
     companion object {
         /** Set while the service is on, so the activity can tell whether the hook is running. */
         @Volatile var instance: KeymapperService? = null
+
+        /** Whether the native program was started in this process. */
+        @Volatile private var nativeStarted = false
 
         private fun isKeyboard(d: InputDevice) =
             !d.isVirtual && d.sources and InputDevice.SOURCE_KEYBOARD == InputDevice.SOURCE_KEYBOARD &&
