@@ -32,7 +32,7 @@ jobs:
       - name: Build (Release)
         run: cmake --build build --config Release
 
-      # The build leaves everything the app needs next to the exe (web/, actions.txt,
+      # The build leaves everything the app needs next to the exe (web/, actions.windows.txt,
       # mappings.default.txt); pick just those, not the test binary or the static library.
       - name: Collect the app
         shell: bash
@@ -40,7 +40,7 @@ jobs:
           mkdir -p package
           cp build/Release/keymapper.exe package/
           cp -r build/Release/web package/web
-          cp build/Release/actions.txt build/Release/mappings.default.txt package/
+          cp build/Release/actions.windows.txt build/Release/mappings.default.txt package/
 
       # python's zipfile module writes portable (forward-slash) entries.
       - name: Zip the app

@@ -32,14 +32,14 @@ jobs:
       - name: Build (Release)
         run: cmake --build build
 
-      # The build leaves everything the app needs next to the program (web/, actions.txt,
+      # The build leaves everything the app needs next to the program (web/, actions.macos.txt,
       # mappings.default.txt); pick just those, not the test binary or the static library.
       - name: Collect the app
         run: |
           mkdir -p package
           cp build/keymapper package/
           cp -r build/web package/web
-          cp build/actions.txt build/mappings.default.txt package/
+          cp build/actions.macos.txt build/mappings.default.txt package/
 
       # python's zipfile module keeps the program's executable bit.
       - name: Zip the app
