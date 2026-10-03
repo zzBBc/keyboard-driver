@@ -84,6 +84,27 @@ TEST(engineChordSwapsPhysicalModifiers) {
     CHECK(same(w.send, {{key::LAlt, true}, {key::LControl, false}, {'C', false}, {'C', true}, {key::LControl, true}, {key::LAlt, false}}));
 }
 
+TEST(engineChordReleasesOnlyTheModifierTheOutputDoesNotWant) {
+    Engine e;
+    e.setConfig("", cfgOf("control+shift+cmd+4 = shift+cmd+s\n"));
+    press(e, "K1", key::LControl);
+    press(e, "K1", key::LShift);
+    press(e, "K1", key::LWin);
+    auto four = press(e, "K1", '4');
+    CHECK(four.swallow);
+    CHECK(same(four.send, {{key::LControl, true}, {'S', false}, {'S', true}, {key::LControl, false}}));
+}
+
+TEST(engineChangingWhatAnActionSendsDoesNotBindItsKeys) {
+    Engine e;  // the built-in action sends control+shift+cmd+4; changing that gives it no shortcut
+    e.setConfig("", cfgOf("[action screenshot-region-clipboard]\nshift+cmd+s\n"));
+    press(e, "K1", key::LControl);
+    press(e, "K1", key::LShift);
+    press(e, "K1", key::LWin);
+    auto four = press(e, "K1", '4');
+    CHECK(!four.swallow && four.send.empty());
+}
+
 TEST(engineKeepsConfigPerKeyboard) {
     Engine e;
     e.setConfig("", cfgOf(""));

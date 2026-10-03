@@ -7,7 +7,7 @@ function render() {
     const b = document.createElement('button');
     b.className = 'tab ' + (cls || ''); b.textContent = label; b.setAttribute('role', 'tab');
     b.setAttribute('aria-selected', String(current === key));
-    b.onclick = () => { if (key === 'add') addLayer(); else { current = key; selKey = ''; picking = false; selMods = []; bind = null; edit = null; render(); } };
+    b.onclick = () => { if (key === 'add') addLayer(); else { current = key; selKey = ''; picking = false; selMods = []; bind = null; render(); } };
     tabs.appendChild(b);
   };
   mk('Base', 'base');

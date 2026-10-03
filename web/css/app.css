@@ -59,8 +59,6 @@
   .chip button:hover { color: var(--bad); }
   .bbind { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding-bottom: 4px; }
   .tag { color: var(--accent); font-size: 12px; margin-left: 6px; font-weight: 400; }
-  .bedit .srow { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-  .bedit .srow .lbl { color: var(--muted); min-width: 48px; }
   .bedit { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px; border: 1px dashed var(--line); border-radius: 8px; margin-bottom: 6px; }
   .bedit label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
   .bedit .on { background: var(--accent); border-color: var(--accent); color: #fff; }

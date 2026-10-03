@@ -1,6 +1,5 @@
-// Actions tab: shortcuts, changing what an action sends, recording keys.
+// Actions tab: shortcuts and recording keys.
 // ---- Actions tab: give an action a shortcut. Actions come from the lists; only the combo is new. ----
-let edit = null;  // changing what an action sends: { action, steps: [{ mods: [], key }], rec: step being recorded or -1 }
 let bind = null;  // { action, mods: [], key: '', scope: 'base' | layer index, recording: bool }
 
 const CODE_KEYS = { Space: 'space', Tab: 'tab', Enter: 'enter', Escape: 'esc', Backspace: 'backspace', ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down',
@@ -16,17 +15,15 @@ function keyFromEvent(e) {
 // Record the next shortcut pressed in the browser. (The OS keeps some, like Alt+Tab or Cmd+Tab, for
 // itself: use the checkboxes and key list for those.) Cmd on a Mac arrives as metaKey, like Win.
 document.addEventListener('keydown', e => {
-  const target = bind && bind.recording ? bind : edit && edit.rec >= 0 ? edit : null;
-  if (!target) return;
+  if (!bind || !bind.recording) return;
   e.preventDefault();
-  const stop = () => { if (target === bind) bind.recording = false; else edit.rec = -1; };
+  const stop = () => { bind.recording = false; };
   const noMods = !e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey;
   if (e.key === 'Escape' && noMods) { stop(); return render(); }
   const key = keyFromEvent(e);
   if (!key) return;  // only a modifier so far: keep waiting
   const mods = MODS.filter(m => ({ ctrl: e.ctrlKey, alt: e.altKey, shift: e.shiftKey, win: e.metaKey })[m]);
-  if (target === bind) { bind.mods = mods; bind.key = key; }
-  else edit.steps[edit.rec] = { mods, key };
+  bind.mods = mods; bind.key = key;
   stop();
   render();
 }, true);
@@ -115,58 +112,15 @@ function stepsFromText(text) {
 const stepCombo = st => comboText(st.mods, st.key);
 const stepsText = steps => steps.map(stepCombo).join(', ');
 
-// Editor for what an action sends. Saved as your own version of the action; Reset restores the built-in one.
-function stepEditor(name, info) {
-  const ed = document.createElement('div'); ed.className = 'bedit';
-  edit.steps.forEach((st, i) => {
-    const row = document.createElement('div'); row.className = 'srow';
-    const lbl = document.createElement('span'); lbl.className = 'lbl'; lbl.textContent = edit.steps.length > 1 ? `Step ${i + 1}` : 'Sends';
-    const rec = document.createElement('button'); rec.className = edit.rec === i ? 'on' : '';
-    rec.textContent = edit.rec === i ? 'Press the keys\u2026 (Esc cancels)' : 'Record';
-    rec.onclick = () => { edit.rec = edit.rec === i ? -1 : i; render(); };
-    row.append(lbl, rec, 'or');
-    for (const m of MODS.filter(x => layout.mods[x])) {  // only the modifiers this OS has (Fn: macOS)
-      const l = document.createElement('label'), c = document.createElement('input');
-      c.type = 'checkbox'; c.checked = st.mods.includes(m);
-      c.onchange = () => { st.mods = c.checked ? [...st.mods, m] : st.mods.filter(x => x !== m); render(); };
-      l.append(c, modLabel(m)); row.appendChild(l);
-    }
-    const key = document.createElement('select');
-    const none = document.createElement('option'); none.value = ''; none.textContent = 'Key\u2026'; key.appendChild(none);
-    for (const k of allKeyNames) { const o = document.createElement('option'); o.value = k; o.textContent = keyLabel(k) === k ? k : `${k} (${keyLabel(k)})`; key.appendChild(o); }
-    key.value = st.key; key.onchange = () => { st.key = key.value; render(); };
-    row.appendChild(key);
-    if (edit.steps.length > 1) {
-      const x = document.createElement('button'); x.textContent = '\u00d7'; x.title = 'Remove this step';
-      x.onclick = () => { edit.steps.splice(i, 1); edit.rec = -1; render(); };
-      row.appendChild(x);
-    }
-    ed.appendChild(row);
-  });
-
-  const addStep = document.createElement('button'); addStep.textContent = '+ Step';
-  addStep.onclick = () => { edit.steps.push({ mods: [], key: '' }); render(); };
-  const complete = edit.steps.every(st => st.key);
-  const ok = document.createElement('button'); ok.className = 'primary'; ok.disabled = !complete;
-  ok.textContent = complete ? `Send ${stepsText(edit.steps)}` : 'Send';
-  ok.onclick = () => {
-    const text = stepsText(edit.steps);
-    const orig = builtin.find(b => b.name === name);
-    const mine = state.actions.findIndex(a => a.name === name);
-    if (orig && stepsText(stepsFromText(orig.steps)) === text) { if (mine >= 0) state.actions.splice(mine, 1); }  // same as built-in: no override needed
-    else if (mine >= 0) state.actions[mine].steps = [text];
-    else state.actions.push({ name, desc: info.desc || '', steps: [text] });
-    edit = null; render();
-  };
-  const cancel = document.createElement('button'); cancel.textContent = 'Cancel';
-  cancel.onclick = () => { edit = null; render(); };
-  ed.append(addStep, ok, cancel);
-  return ed;
+// Back to the built-in version of an action you changed in your config file.
+function resetSends(name) {
+  const i = state.actions.findIndex(a => a.name === name);
+  if (i >= 0) state.actions.splice(i, 1);
 }
 
 function renderActions(p) {
   const hint = document.createElement('p'); hint.className = 'hint';
-  hint.textContent = 'Pick an action and give it a shortcut, or change the keys it sends (for example make Undo send alt+z). Removing a shortcut keeps the action. Press Save to apply. ' + layout.actionsNote;
+  hint.textContent = 'Pick an action and give it a shortcut (the keys that run it). Removing a shortcut keeps the action. Press Save to apply. ' + layout.actionsNote;
   p.appendChild(hint);
 
   const section = (title, names) => {
@@ -182,7 +136,9 @@ function renderActions(p) {
       const nm = document.createElement('span'); nm.className = 'bname'; nm.textContent = name;
       if (changed) { const t = document.createElement('span'); t.className = 'tag'; t.textContent = 'changed'; t.title = `Built-in sends: ${orig.steps}`; nm.appendChild(t); }
       const ds = document.createElement('span'); ds.className = 'bdesc'; ds.textContent = info.desc;
-      const st = document.createElement('code'); st.textContent = info.steps;
+      const st = document.createElement('span'); st.className = 'bdesc';
+      const code = document.createElement('code'); code.textContent = info.steps;
+      st.append('Sends ', code);
       r.append(nm, ds, st);
 
       const bd = document.createElement('div'); bd.className = 'bbind';
@@ -199,7 +155,6 @@ function renderActions(p) {
         chip.appendChild(rm); bd.appendChild(chip);
       }
       const bindOpen = bind && bind.action === name;
-      const editOpen = edit && edit.action === name;
       if (bound.length && !bindOpen) {
         const rmAll = document.createElement('button');
         rmAll.textContent = bound.length > 1 ? 'Remove shortcuts' : 'Remove shortcut';
@@ -209,24 +164,17 @@ function renderActions(p) {
       }
       if (!bindOpen) {
         const add = document.createElement('button'); add.textContent = '+ Shortcut';
-        add.onclick = () => { edit = null; bind = { action: name, mods: [], key: '', scope: 'base', recording: false }; render(); };
+        add.onclick = () => { bind = { action: name, mods: [], key: '', scope: 'base', recording: false }; render(); };
         bd.appendChild(add);
       }
-      if (!editOpen) {
-        const chg = document.createElement('button'); chg.textContent = 'Change keys';
-        chg.title = 'Change what this action sends';
-        chg.onclick = () => { bind = null; edit = { action: name, steps: stepsFromText(info.steps), rec: -1 }; render(); };
-        bd.appendChild(chg);
-      }
-      if (changed && !editOpen) {
-        const reset = document.createElement('button'); reset.textContent = 'Reset keys';
-        reset.title = `Back to the built-in keys (${orig.steps})`;
-        reset.onclick = () => { state.actions.splice(state.actions.findIndex(a => a.name === name), 1); render(); };
+      if (changed) {
+        const reset = document.createElement('button'); reset.textContent = 'Reset what it sends';
+        reset.title = `Send the built-in keys again (${orig.steps})`;
+        reset.onclick = () => { resetSends(name); render(); };
         bd.appendChild(reset);
       }
       r.appendChild(bd);
       if (bindOpen) r.appendChild(bindEditor(name));
-      if (editOpen) r.appendChild(stepEditor(name, info));
       det.appendChild(r);
     }
     p.appendChild(det);
