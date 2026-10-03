@@ -1,0 +1,22 @@
+{
+  "rows": [
+    ["esc", 1, "f1", "f2", "f3", "f4", 0.5, "f5", "f6", "f7", "f8", 0.5, "f9", "f10", "f11", "f12", 0.5, "f13", "f14", "f15"],
+    ["`", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", ["backspace", 2], 0.5, "insert", "home", "pageup"],
+    [["tab", 1.5], "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", ["\\", 1.5], 0.5, "delete", "end", "pagedown"],
+    [["capslock", 1.75], "a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'", ["enter", 2.25]],
+    [["lshift", 2.25], "z", "x", "c", "v", "b", "n", "m", ",", ".", "/", ["rshift", 2.75], 1.5, "up"],
+    [["lctrl", 1.25], ["lalt", 1.25], ["lwin", 1.25], ["space", 6.25], ["rwin", 1.25], ["ralt", 1.25], ["apps", 1.25], ["rctrl", 1.25], 0.5, "left", "down", "right"],
+    [],
+    ["f16", "f17", "f18", "f19", "f20"],
+    [["volumedown", 1.5], ["volumeup", 1.5], ["mute", 1.5], ["playpause", 1.5], ["previoustrack", 1.5], ["nexttrack", 1.5]]
+  ],
+  "labels": {
+    "esc": "Esc", "backspace": "Delete", "insert": "Help",
+    "home": "Home", "pageup": "PgUp", "delete": "Del ⌦", "end": "End", "pagedown": "PgDn", "tab": "Tab", "capslock": "Caps",
+    "enter": "Return", "lshift": "Shift", "rshift": "Shift", "lctrl": "Ctrl", "rctrl": "Ctrl", "lwin": "Cmd", "rwin": "Cmd",
+    "lalt": "Opt", "ralt": "Opt", "apps": "Menu", "space": "Space", "up": "↑", "down": "↓", "left": "←", "right": "→",
+    "volumeup": "Vol+", "volumedown": "Vol−", "mute": "Mute", "playpause": "Play", "nexttrack": "Next", "previoustrack": "Prev"
+  },
+  "mods": { "ctrl": "Control", "alt": "Option", "shift": "Shift", "win": "Cmd" },
+  "actionsNote": "(macOS keeps some shortcuts, like Cmd+Tab, for itself; enter those with the boxes instead of recording. In the config, win is Command and alt is Option. The built-in actions send Windows shortcuts, so most of them mean something else on macOS: change their keys or bind your own.)"
+}

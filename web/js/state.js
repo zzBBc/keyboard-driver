@@ -7,4 +7,4 @@ let builtin = [];  // [{ name, desc, steps }] from config/actions.txt, read-only
 let device = '';   // '' = default config, else a hardware id
 let devices = [];  // [{ id, own, name }]
 let lastKb = '';
-let isMac = false;  // the program was built for macOS: name keys and draw the keyboard the Mac way
+let layout = { rows: [], labels: {}, mods: {}, actionsNote: '' };  // web/layouts/<os>.json for the OS the program was built for

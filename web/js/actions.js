@@ -166,9 +166,7 @@ function stepEditor(name, info) {
 
 function renderActions(p) {
   const hint = document.createElement('p'); hint.className = 'hint';
-  hint.textContent = 'Pick an action and give it a shortcut, or change the keys it sends (for example make Undo send alt+z). Removing a shortcut keeps the action. Press Save to apply. ' + (isMac
-    ? '(macOS keeps some shortcuts, like Cmd+Tab, for itself; enter those with the boxes instead of recording. In the config, win is Command and alt is Option. The built-in actions send Windows shortcuts, so most of them mean something else on macOS: change their keys or bind your own.)'
-    : '(Windows keeps some shortcuts, like Alt+Tab, for itself; enter those with the boxes instead of recording.)');
+  hint.textContent = 'Pick an action and give it a shortcut, or change the keys it sends (for example make Undo send alt+z). Removing a shortcut keeps the action. Press Save to apply. ' + layout.actionsNote;
   p.appendChild(hint);
 
   const section = (title, names) => {

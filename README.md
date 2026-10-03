@@ -217,7 +217,7 @@ The program is a portable core plus one small layer per operating system:
   and the keyboard it came from, decides whether to swallow it and which keys to inject), and the
   rules for which GUI files may be served (`static_files`). Built as the `keymapper_core` library.
 - `src/server/server.cpp`: localhost HTTP server and API (`/api/config`, `/api/devices`,
-  `/api/keys`, `/api/actions`) plus the GUI's scripts and styles from `web/`. It uses
+  `/api/keys`, `/api/actions`, `/api/platform`) plus the GUI's scripts and styles from `web/`. It uses
   `std::filesystem` and a small Winsock/BSD sockets shim, so it is portable too.
 - `src/platform/platform.h`: what the program needs from the OS (find the install folder, list
   keyboards, intercept keys and inject the engine's output).
@@ -232,6 +232,8 @@ The program is a portable core plus one small layer per operating system:
 - `web/`: the GUI: `index.html`, `css/app.css` and plain scripts in `js/` loaded in order: `state`
   (shared state), `config` (parsing and validation), `keyboard` (keyboard picture and target
   picker), `actions` (Actions tab), `devices` (server calls), `app` (rendering and start-up).
+  `layouts/<os>.json` (`windows`, `macos`) holds what differs per OS: the keyboard picture's rows,
+  key and modifier labels, and the Actions tab's note. The GUI loads the one `/api/platform` names.
 - `tests/`: C++ tests, one file per area, on a tiny shared harness (`harness.h`: write
   `TEST(name) { CHECK(...); }` and it registers itself). `tests/common/` (`config_`, `matcher_`,
   `keys_`, `engine_`, `static_files_tests.cpp`) runs on every OS; `tests/macos/`

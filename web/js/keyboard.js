@@ -1,41 +1,9 @@
 // The drawn keyboard and the target picker.
-// Keyboard picture. Rows of [name, width in units] or a number (blank gap).
-// A Mac keyboard has F13-F15 where a PC one has PrintScreen/ScrollLock/Pause, and Control, Option,
-// Command in that order. Keys macOS has no code for (F21-F24, the browser keys...) are left out there.
-function kbRows() {
-  const main = [
-    isMac
-      ? [['esc',1], 1, ['f1',1], ['f2',1], ['f3',1], ['f4',1], .5, ['f5',1], ['f6',1], ['f7',1], ['f8',1], .5, ['f9',1], ['f10',1], ['f11',1], ['f12',1], .5, ['f13',1], ['f14',1], ['f15',1]]
-      : [['esc',1], 1, ['f1',1], ['f2',1], ['f3',1], ['f4',1], .5, ['f5',1], ['f6',1], ['f7',1], ['f8',1], .5, ['f9',1], ['f10',1], ['f11',1], ['f12',1], .5, ['printscreen',1], ['scrolllock',1], ['pause',1]],
-    [..."`1234567890-=".split('').map(c => [c,1]), ['backspace',2], .5, ['insert',1], ['home',1], ['pageup',1]],
-    [['tab',1.5], ..."qwertyuiop[]".split('').map(c => [c,1]), ['\\',1.5], .5, ['delete',1], ['end',1], ['pagedown',1]],
-    [['capslock',1.75], ..."asdfghjkl;'".split('').map(c => [c,1]), ['enter',2.25]],
-    [['lshift',2.25], ..."zxcvbnm,./".split('').map(c => [c,1]), ['rshift',2.75], 1.5, ['up',1]],
-    isMac
-      ? [['lctrl',1.25], ['lalt',1.25], ['lwin',1.25], ['space',6.25], ['rwin',1.25], ['ralt',1.25], ['apps',1.25], ['rctrl',1.25], .5, ['left',1], ['down',1], ['right',1]]
-      : [['lctrl',1.25], ['lwin',1.25], ['lalt',1.25], ['space',6.25], ['ralt',1.25], ['rwin',1.25], ['apps',1.25], ['rctrl',1.25], .5, ['left',1], ['down',1], ['right',1]],
-    'sep',
-  ];
-  if (isMac) return [...main,
-    [['f16',1], ['f17',1], ['f18',1], ['f19',1], ['f20',1]],
-    [['volumedown',1.5], ['volumeup',1.5], ['mute',1.5], ['playpause',1.5], ['previoustrack',1.5], ['nexttrack',1.5]],
-  ];
-  return [...main,
-    [['f13',1], ['f14',1], ['f15',1], ['f16',1], .5, ['f17',1], ['f18',1], ['f19',1], ['f20',1], .5, ['f21',1], ['f22',1], ['f23',1], ['f24',1]],
-    [['volumedown',1.5], ['volumeup',1.5], ['mute',1.5], ['playpause',1.5], ['previoustrack',1.5], ['nexttrack',1.5], ['mediastop',1.5], .5,
-     ['browserback',1.5], ['browserforward',1.5], ['browserrefresh',1.5], ['browserhome',1.5], ['launchmail',1.5]],
-  ];
-}
-// Mac names for the same keys: win is Command, alt is Option, insert arrives as Help, and Backspace
-// is the key a Mac calls Delete (delete is forward delete).
-const MAC_LABELS = { lctrl: 'Ctrl', rctrl: 'Ctrl', lwin: 'Cmd', rwin: 'Cmd', lalt: 'Opt', ralt: 'Opt', insert: 'Help', backspace: 'Delete', delete: 'Del ⌦' };
-const MOD_LABELS = { ctrl: 'Ctrl', alt: 'Alt', shift: 'Shift', win: 'Win' };
-const MAC_MOD_LABELS = { ctrl: 'Control', alt: 'Option', shift: 'Shift', win: 'Cmd' };
-const modLabel = m => (isMac ? MAC_MOD_LABELS : MOD_LABELS)[m];
-const KB_LABELS = { esc: 'Esc', printscreen: 'PrtSc', scrolllock: 'ScrLk', pause: 'Pause', backspace: 'Bksp', insert: 'Ins', home: 'Home', pageup: 'PgUp', delete: 'Del', end: 'End', pagedown: 'PgDn', tab: 'Tab', capslock: 'Caps', enter: 'Enter', lshift: 'Shift', rshift: 'Shift', lctrl: 'Ctrl', rctrl: 'Ctrl', lwin: 'Win', rwin: 'Win', lalt: 'Alt', ralt: 'AltGr', apps: 'Menu', space: 'Space', up: '\u2191', down: '\u2193', left: '\u2190', right: '\u2192',
-  volumeup: 'Vol+', volumedown: 'Vol\u2212', mute: 'Mute', playpause: 'Play', nexttrack: 'Next', previoustrack: 'Prev', mediastop: 'Stop',
-  browserback: 'Back', browserforward: 'Fwd', browserrefresh: 'Refresh', browserhome: 'Web', launchmail: 'Mail' };
-const keyLabel = n => (isMac && MAC_LABELS[n]) || KB_LABELS[n] || (n.length === 1 || /^f\d+$/.test(n) ? n.toUpperCase() : n);
+// Keyboard picture, key labels and modifier names come from web/layouts/<os>.json (see layout in
+// state.js). A row is a list of "name" (1 unit wide), ["name", width in units] or a number (blank
+// gap); an empty row is a separator.
+const modLabel = m => layout.mods[m] || m[0].toUpperCase() + m.slice(1);
+const keyLabel = n => layout.labels[n] || (n.length === 1 || /^f\d+$/.test(n) ? n.toUpperCase() : n);
 const chordLabel = c => c.split('+').map(x => MODS.includes(x) ? modLabel(x) : keyLabel(x)).join('+');
 // Short text for what a key becomes: a key name, a chord, or "@action".
 const targetLabel = t => t.trim().toLowerCase() === 'none' ? 'cleared' : t.startsWith('@') ? t : (t.includes(',') ? t : chordLabel(normChord(t)));
@@ -60,12 +28,12 @@ function buildKeyboard(list, trigger) {
 
   const scroll = document.createElement('div'); scroll.className = 'kbd-scroll';
   const kbd = document.createElement('div'); kbd.className = 'kbd';
-  for (const row of kbRows()) {
-    if (row === 'sep') { const g = document.createElement('div'); g.style.height = '10px'; kbd.appendChild(g); continue; }
+  for (const row of layout.rows) {
+    if (!row.length) { const g = document.createElement('div'); g.style.height = '10px'; kbd.appendChild(g); continue; }
     const r = document.createElement('div'); r.className = 'krow';
     for (const item of row) {
       if (typeof item === 'number') { const g = document.createElement('div'); g.className = 'gap'; g.style.width = `calc(var(--u) * ${item} + ${item * 4}px)`; r.appendChild(g); continue; }
-      const [name, w] = item;
+      const [name, w] = typeof item === 'string' ? [item, 1] : item;
       const k = document.createElement('div'); k.className = 'key';
       k.style.width = `calc(var(--u) * ${w} + ${(w - 1) * 4}px)`;
       const main = document.createElement('span'); main.textContent = keyLabel(name); k.appendChild(main);
