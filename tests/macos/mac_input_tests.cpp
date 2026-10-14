@@ -306,7 +306,7 @@ TEST(macSwitchInputSourceSelectsTheNextSourceItself) {
     CHECK(lib.ok);
     const auto& steps = lib.cfg.actions["switch-input-source"];
     CHECK(steps.size() == 1 && steps[0].mods == 0 && steps[0].key == key::InputSource);
-    auto p = parseWithLibrary("", lib.cfg);
+    auto p = parseWithLibrary("control+shift = @switch-input-source\n", lib.cfg);
     CHECK(p.ok);
     Engine e;
     e.setConfig("", std::make_shared<Config>(p.cfg));

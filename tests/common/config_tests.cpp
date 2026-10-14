@@ -301,9 +301,11 @@ TEST(modifierOnlyShortcutParses) {
     CHECK(!parse("ctrl+fn = a\n").ok);      // fn can't be part of a shortcut
 }
 
-TEST(macSwitchInputSourceDefaultsToControlShift) {
+TEST(macSwitchInputSourceBindsToControlShift) {
     auto lib = parse(sourceFile("config/actions.macos.txt"));
-    auto p = parseWithLibrary("", lib.cfg);
+    CHECK(lib.cfg.actionShortcuts.count("switch-input-source") == 0);  // no default: bound by the config
+    CHECK(!findBinding(parseWithLibrary("", lib.cfg).cfg.base.chords, ModCtrl | ModShift, 0));
+    auto p = parseWithLibrary("control+shift = @switch-input-source\n", lib.cfg);
     CHECK(p.ok);
     const Binding* b = findBinding(p.cfg.base.chords, ModCtrl | ModShift, 0);
     // macOS ignores an Fn (Globe) press that a program sends, so keymapper selects the source itself.
