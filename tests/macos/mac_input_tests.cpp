@@ -292,8 +292,46 @@ TEST(macActionListSendsOnlyKeysMacOSHas) {
     CHECK(p.ok && !p.cfg.actions.empty());
     for (const auto& [name, steps] : p.cfg.actions)
         for (const auto& step : steps) {
-            const bool sendable = mac::macFromKey(step.key) || mac::mediaFromKey(step.key);
+            const bool sendable = mac::macFromKey(step.key) || mac::mediaFromKey(step.key) ||
+                                  step.key == key::InputSource;  // selected by the macOS layer itself
             if (!sendable) std::cerr << "  " << name << ": key " << step.key << " has no macOS code\n";
             CHECK(sendable);
         }
+}
+
+TEST(macSwitchInputSourceSelectsTheNextSourceItself) {
+    // Control+Shift lets go of the modifiers and sends the input source key, which the macOS layer
+    // turns into selecting the next source (a posted Fn press does not trigger the Globe key's action).
+    auto lib = parse(sourceFile("config/actions.macos.txt"));
+    CHECK(lib.ok);
+    const auto& steps = lib.cfg.actions["switch-input-source"];
+    CHECK(steps.size() == 1 && steps[0].mods == 0 && steps[0].key == key::InputSource);
+    auto p = parseWithLibrary("", lib.cfg);
+    CHECK(p.ok);
+    Engine e;
+    e.setConfig("", std::make_shared<Config>(p.cfg));
+    press(e, "K1", key::LControl);
+    press(e, "K1", key::LShift);
+    auto up = press(e, "K1", key::LShift, true);
+    CHECK(up.swallow);
+    CHECK(same(up.send, {{key::LShift, true}, {key::LControl, true}, {key::InputSource, false},
+                         {key::InputSource, true}, {key::LControl, false}}));
+}
+
+TEST(macNextInputSourceCyclesTheKeyboardSources) {
+    // What a Mac with U.S. and Vietnamese Telex lists: the Character Viewer is not a keyboard source,
+    // and an input method with modes is chosen through its modes, so the Globe key cycles the other two.
+    const std::vector<mac::InputSource> enabled = {
+        {"com.apple.keylayout.US", true, true},
+        {"com.apple.CharacterPaletteIM", false, true},
+        {"com.apple.inputmethod.VietnameseIM", true, false},
+        {"com.apple.inputmethod.VietnameseIM.VietnameseTelex", true, true},
+    };
+    CHECK(mac::nextInputSource(enabled, "com.apple.keylayout.US").value_or("") ==
+          "com.apple.inputmethod.VietnameseIM.VietnameseTelex");
+    CHECK(mac::nextInputSource(enabled, "com.apple.inputmethod.VietnameseIM.VietnameseTelex").value_or("") ==
+          "com.apple.keylayout.US");  // wraps around
+    CHECK(mac::nextInputSource(enabled, "unknown").value_or("") == "com.apple.keylayout.US");
+    CHECK(!mac::nextInputSource({{"com.apple.keylayout.US", true, true}}, "com.apple.keylayout.US"));  // nothing else
+    CHECK(!mac::nextInputSource({}, ""));
 }

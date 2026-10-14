@@ -52,21 +52,3 @@ TEST(fnAloneIsATapOfTheFnKey) {
     CHECK(b != nullptr && b->out.size() == 1 && b->out[0].key == key::Fn);
     CHECK(!parse("fn = a\n").ok);  // still not a shortcut
 }
-
-TEST(macSwitchInputSourceTapsFnLikeTheGlobeKey) {
-    // switch-input-source does what pressing Fn (Globe) does: Control+Shift lets go of the
-    // modifiers and taps Fn alone, then puts back the one still held.
-    auto lib = parse(sourceFile("config/actions.macos.txt"));
-    CHECK(lib.ok);
-    CHECK(same(expand(lib.cfg.actions["switch-input-source"], {}), {{key::Fn, false}, {key::Fn, true}}));
-    auto p = parseWithLibrary("", lib.cfg);
-    CHECK(p.ok);
-    Engine e;
-    e.setConfig("", std::make_shared<Config>(p.cfg));
-    press(e, "K1", key::LControl);
-    press(e, "K1", key::LShift);
-    auto up = press(e, "K1", key::LShift, true);
-    CHECK(up.swallow);
-    CHECK(same(up.send, {{key::LShift, true}, {key::LControl, true}, {key::Fn, false}, {key::Fn, true},
-                         {key::LControl, false}}));
-}

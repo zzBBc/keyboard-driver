@@ -306,7 +306,8 @@ TEST(macSwitchInputSourceDefaultsToControlShift) {
     auto p = parseWithLibrary("", lib.cfg);
     CHECK(p.ok);
     const Binding* b = findBinding(p.cfg.base.chords, ModCtrl | ModShift, 0);
-    CHECK(b && b->out.size() == 1 && b->out[0].mods == 0 && b->out[0].key == key::Fn);  // taps Fn (Globe)
+    // macOS ignores an Fn (Globe) press that a program sends, so keymapper selects the source itself.
+    CHECK(b && b->out.size() == 1 && b->out[0].mods == 0 && b->out[0].key == key::InputSource);
     auto win = parse(sourceFile("config/actions.windows.txt"));  // Windows switches on its own
     CHECK(win.cfg.actions.count("switch-input-source") == 1 && win.cfg.actionShortcuts.count("switch-input-source") == 0);
 }
