@@ -78,6 +78,18 @@ test('validChord / validSteps / validTarget', () => {
   assert.strictEqual(run(`validTarget('volumeup')`), true);
 });
 
+test('a shortcut can be modifiers only, a step can not', () => {
+  const run = loadGui();
+  assert.strictEqual(run(`normChord('Shift + Ctrl')`), 'ctrl+shift');
+  assert.strictEqual(run(`comboText(['shift', 'ctrl'], '')`), 'ctrl+shift');
+  assert.strictEqual(run(`validChord('ctrl+shift')`), true);
+  assert.strictEqual(run(`validChord('ctrl+shift', true)`), false);
+  assert.strictEqual(run(`validSteps('ctrl+shift')`), false);
+  assert.strictEqual(run(`validChord('fn+ctrl')`), false);
+  assert.strictEqual(run(`validSteps('fn')`), true);              // a tap of Fn (Globe) alone
+  assert.strictEqual(run(`validChord('fn')`), false);             // but not a shortcut
+});
+
 test('steps text <-> editor steps', () => {
   const run = loadGui();
   assert.deepStrictEqual(JSON.parse(run(`JSON.stringify(stepsFromText('ctrl+c, ctrl+v'))`)),

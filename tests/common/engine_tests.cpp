@@ -149,3 +149,56 @@ TEST(engineNullConfigRemovesAKeyboardsOwn) {
     e.setConfig("A", nullptr);                      // remove A's own config: back to the default
     CHECK(press(e, "A", key::Tab).swallow);
 }
+
+TEST(engineShortcutRunsAShippedMacAction) {
+    auto lib = parse(sourceFile("config/actions.macos.txt"));
+    CHECK(lib.ok);
+    auto p = parseWithLibrary("shift+cmd+s = @screenshot-region-clipboard\n", lib.cfg);
+    CHECK(p.ok);
+    Engine e;
+    e.setConfig("", std::make_shared<Config>(p.cfg));
+    press(e, "K1", key::LShift);
+    press(e, "K1", key::LWin);
+    auto s = press(e, "K1", 'S');                  // Shift and Command are held: add Control, tap 4
+    CHECK(s.swallow);
+    CHECK(same(s.send, {{key::LControl, false}, {'4', false}, {'4', true}, {key::LControl, true}}));
+    auto sUp = press(e, "K1", 'S', true);
+    CHECK(sUp.swallow && sUp.send.empty());
+}
+
+TEST(engineModifierOnlyShortcutFiresOnRelease) {
+    Engine e;
+    e.setConfig("", cfgOf("ctrl+shift = ctrl+alt+space\n"));
+    CHECK(!press(e, "K1", key::LControl).swallow);   // the modifiers themselves pass through
+    CHECK(!press(e, "K1", key::LShift).swallow);
+    auto up = press(e, "K1", key::LShift, true);     // Shift is let go first, Ctrl stays held
+    CHECK(up.swallow);
+    CHECK(same(up.send, {{key::LShift, true}, {key::LAlt, false}, {key::Space, false}, {key::Space, true}, {key::LAlt, true}}));
+    auto ctrlUp = press(e, "K1", key::LControl, true);  // fires once
+    CHECK(!ctrlUp.swallow && ctrlUp.send.empty());
+
+    press(e, "K1", key::RShift);                     // either order, either side
+    press(e, "K1", key::RControl);
+    CHECK(press(e, "K1", key::RControl, true).swallow);
+    press(e, "K1", key::RShift, true);
+}
+
+TEST(engineModifierOnlyShortcutSkipsWhenAKeyWasPressed) {
+    Engine e;
+    e.setConfig("", cfgOf("ctrl+shift = ctrl+alt+space\n"));
+    press(e, "K1", key::LControl);
+    press(e, "K1", key::LShift);
+    press(e, "K1", 'T');                             // Ctrl+Shift+T: not a tap
+    press(e, "K1", 'T', true);
+    auto up = press(e, "K1", key::LShift, true);
+    CHECK(!up.swallow && up.send.empty());
+    press(e, "K1", key::LControl, true);
+
+    press(e, "K1", key::LControl);                   // Ctrl+Shift+Alt: an extra modifier
+    press(e, "K1", key::LShift);
+    press(e, "K1", key::LAlt);
+    press(e, "K1", key::LAlt, true);
+    auto up2 = press(e, "K1", key::LShift, true);
+    CHECK(!up2.swallow && up2.send.empty());
+    press(e, "K1", key::LControl, true);
+}

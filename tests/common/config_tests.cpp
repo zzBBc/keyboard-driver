@@ -266,8 +266,8 @@ TEST(shippedActionListsParse) {
     auto mac = parse(sourceFile("config/actions.macos.txt"));
     for (const auto& e : win.errors) std::cerr << "  actions.windows.txt: " << e << "\n";
     for (const auto& e : mac.errors) std::cerr << "  actions.macos.txt: " << e << "\n";
-    CHECK(win.ok && win.errors.empty() && win.cfg.actions.size() == 55);
-    CHECK(mac.ok && mac.errors.empty() && mac.cfg.actions.size() == 62);
+    CHECK(win.ok && win.errors.empty() && win.cfg.actions.size() == 56);
+    CHECK(mac.ok && mac.errors.empty() && mac.cfg.actions.size() == 63);
     for (const char* name : {"switch-window", "close-window", "task-view", "copy", "undo", "new-tab"})
         CHECK(win.cfg.actions.count(name) == 1 && mac.cfg.actions.count(name) == 1);
     CHECK(mac.cfg.actions["copy"].size() == 1 && mac.cfg.actions["copy"][0].mods == ModWin);  // Cmd+C
@@ -288,4 +288,25 @@ TEST(macModifierNamesMeanTheSameModifiers) {
     CHECK(findBinding(p.cfg.base.chords, ModWin | ModAlt | ModCtrl | ModShift, 'Q') != nullptr);
     CHECK(findBinding(p.cfg.base.chords, ModWin | ModAlt, 'W') != nullptr);
     CHECK(!parse("super+q = a\n").ok);  // still an unknown modifier
+}
+
+TEST(modifierOnlyShortcutParses) {
+    // "ctrl+shift" (no key) fires on release; any order and the Mac names mean the same combo.
+    auto p = parse("ctrl+shift = a\noption+cmd = b\n");
+    for (const auto& e : p.errors) std::cerr << "  parse error: " << e << "\n";
+    CHECK(p.ok && p.errors.empty());
+    CHECK(findBinding(p.cfg.base.chords, ModCtrl | ModShift, 0) != nullptr);
+    CHECK(findBinding(p.cfg.base.chords, ModAlt | ModWin, 0) != nullptr);
+    CHECK(!parse("a = ctrl+shift\n").ok);   // a step still needs a key
+    CHECK(!parse("ctrl+fn = a\n").ok);      // fn can't be part of a shortcut
+}
+
+TEST(macSwitchInputSourceDefaultsToControlShift) {
+    auto lib = parse(sourceFile("config/actions.macos.txt"));
+    auto p = parseWithLibrary("", lib.cfg);
+    CHECK(p.ok);
+    const Binding* b = findBinding(p.cfg.base.chords, ModCtrl | ModShift, 0);
+    CHECK(b && b->out.size() == 1 && b->out[0].mods == 0 && b->out[0].key == key::Fn);  // taps Fn (Globe)
+    auto win = parse(sourceFile("config/actions.windows.txt"));  // Windows switches on its own
+    CHECK(win.cfg.actions.count("switch-input-source") == 1 && win.cfg.actionShortcuts.count("switch-input-source") == 0);
 }

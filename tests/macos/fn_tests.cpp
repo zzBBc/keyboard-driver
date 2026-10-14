@@ -39,3 +39,34 @@ TEST(macActionListTilesWithFn) {
     CHECK(mac.cfg.actions["snap-left"][0].key == key::Left);
     CHECK(mac.cfg.actions["center-window"].size() == 1 && mac.cfg.actions["center-window"][0].mods == (ModFn | ModCtrl));
 }
+
+TEST(fnAloneIsATapOfTheFnKey) {
+    // A step of just "fn" presses and releases Fn (Globe) on its own, as a person taps it.
+    auto p = parse("[action globe]\nfn\n\nalt+g = fn\n");
+    for (const auto& e : p.errors) std::cerr << "  parse error: " << e << "\n";
+    CHECK(p.ok && p.errors.empty());
+    CHECK(p.cfg.actions["globe"].size() == 1 && p.cfg.actions["globe"][0].mods == 0);
+    CHECK(p.cfg.actions["globe"][0].key == key::Fn);
+    CHECK(same(expand(p.cfg.actions["globe"], {}), {{key::Fn, false}, {key::Fn, true}}));
+    const Binding* b = findBinding(p.cfg.base.chords, ModAlt, 'G');
+    CHECK(b != nullptr && b->out.size() == 1 && b->out[0].key == key::Fn);
+    CHECK(!parse("fn = a\n").ok);  // still not a shortcut
+}
+
+TEST(macSwitchInputSourceTapsFnLikeTheGlobeKey) {
+    // switch-input-source does what pressing Fn (Globe) does: Control+Shift lets go of the
+    // modifiers and taps Fn alone, then puts back the one still held.
+    auto lib = parse(sourceFile("config/actions.macos.txt"));
+    CHECK(lib.ok);
+    CHECK(same(expand(lib.cfg.actions["switch-input-source"], {}), {{key::Fn, false}, {key::Fn, true}}));
+    auto p = parseWithLibrary("", lib.cfg);
+    CHECK(p.ok);
+    Engine e;
+    e.setConfig("", std::make_shared<Config>(p.cfg));
+    press(e, "K1", key::LControl);
+    press(e, "K1", key::LShift);
+    auto up = press(e, "K1", key::LShift, true);
+    CHECK(up.swallow);
+    CHECK(same(up.send, {{key::LShift, true}, {key::LControl, true}, {key::Fn, false}, {key::Fn, true},
+                         {key::LControl, false}}));
+}
