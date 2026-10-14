@@ -8,7 +8,8 @@ const modId = name => MOD_ALIASES[name];
 // The name the GUI writes into the config for a modifier id: this OS's (layout.names), e.g. cmd on macOS.
 const modName = m => (layout.names && layout.names[m]) || m;
 // Modifier ids -> config text, in the fixed order: ['win', 'ctrl'] + 'q' -> "ctrl+win+q" (macOS: "control+cmd+q").
-const comboText = (mods, key) => [...MODS.filter(m => mods.includes(m)).map(modName), key].join('+');
+// No key: a modifier-only shortcut such as "ctrl+shift".
+const comboText = (mods, key) => [...MODS.filter(m => mods.includes(m)).map(modName), ...(key ? [key] : [])].join('+');
 const ACTION_NAME = /^[a-z0-9_-]+$/;
 
 // Same rule as the server: the '=' of "from = to" is not the one in "alt+=".
@@ -54,16 +55,24 @@ function serialize(s) {
 
 // "Alt + q" -> "alt+q"; modifiers in a fixed order and under this OS's names, so "shift+ctrl+a" equals
 // "ctrl+shift+a", and on macOS "win+q" equals "cmd+q".
-function normChord(str) {
+// A last part that is a modifier ("ctrl+shift") is a modifier-only shortcut.
+function splitChord(str) {
   const parts = str.split('+').map(x => x.trim().toLowerCase());
-  const key = parts.pop();
-  return comboText(parts.map(modId), key);
+  const key = modId(parts[parts.length - 1]) ? '' : parts.pop();
+  return { mods: parts, key };
 }
-// A shortcut (the "from" side) can't hold fn; something sent (`canSend`) can.
+function normChord(str) {
+  const { mods, key } = splitChord(str);
+  return comboText(mods.map(modId), key);
+}
+// A shortcut (the "from" side) can't hold fn, but can be modifiers only (fired when they are released
+// with no key pressed); something sent (`canSend`) can hold fn and needs a key, or is fn alone (a tap
+// of the Fn/Globe key).
 function validChord(str, canSend = false) {
-  const parts = str.split('+').map(x => x.trim().toLowerCase());
-  const key = parts.pop();
-  return !!key && (validKeys.size === 0 || validKeys.has(key)) && parts.every(p => modId(p) && (canSend || modId(p) !== 'fn'));
+  const { mods, key } = splitChord(str);
+  if (canSend && !key && mods.length === 1 && modId(mods[0]) === 'fn') return true;
+  const keyOk = key ? validKeys.size === 0 || validKeys.has(key) : !canSend && mods.length > 0;
+  return keyOk && mods.every(p => modId(p) && (canSend || modId(p) !== 'fn'));
 }
 function validSteps(str) { return !!str && (validChord(str, true) || str.split(',').every(x => validChord(x, true))); }
 // Built-in actions grouped by the category: line in config/actions.<os>.txt, in the order the file lists them.

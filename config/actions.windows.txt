@@ -4,6 +4,7 @@
 # same name in your own config to override it. Keep the names in step with actions.macos.txt: an
 # action Windows has no shortcut for (hide-app, next-app-window, quick-note, and macOS's window
 # tiling: snap-top/-bottom, arrange-*, center-window, restore-window) is left out.
+# switch-input-source has no default shortcut here: Windows has its own (Win+Space, Ctrl+Shift, Alt+Shift).
 #
 # [action name]
 # description: what it does
@@ -269,6 +270,11 @@ ctrl+a
 description: Copy the selection and paste it right after
 category: Editing
 ctrl+c, ctrl+v
+
+[action switch-input-source]
+description: Switch to the next input language or keyboard layout
+category: Editing
+win+space
 
 # --- Tabs (browsers, editors) ---
 

@@ -106,6 +106,8 @@ ctrl+c, ctrl+v               # steps run in order
 ```
 
 - A combo fires only when exactly those modifiers are held, and the trigger key is swallowed.
+- A combo of modifiers only (`ctrl+shift`) fires when they are released with no other key pressed,
+  like Windows' Ctrl+Shift. The modifiers themselves still reach programs.
 - If a step wants a modifier you are already holding (Alt for `alt+tab`), it is left held, so the
   Windows switcher stays open while you keep Alt down. Other held modifiers are released for the
   step and put back afterwards.
@@ -116,11 +118,12 @@ ctrl+c, ctrl+v               # steps run in order
 - `alt+q = none` removes the binding for that combo, including a default shortcut declared by a
   library action (a default is bound in Base unless your config binds or clears that combo). It does
   not block the key itself. In the GUI a default shows as a chip marked "(default)" and its ×
-  writes the `none` line. The shipped action lists declare no defaults at the moment.
+  writes the `none` line.
 - Defining an action with the same name as a built-in one in your config overrides it.
 
 **Built-in actions**: `config/actions.windows.txt` and `config/actions.macos.txt`, common shortcuts
-grouped by category, under the same names on both OSes. None has a default shortcut. The GUI
+grouped by category, under the same names on both OSes. On macOS, `switch-input-source` defaults
+to Ctrl+Shift (see the file's header); no other action has a default shortcut. The GUI
 chooses actions from these lists and does not create new ones; to define your own, write an
 `[action ...]` block in the config file.
 
@@ -131,7 +134,8 @@ Lowercase: letters, digits, `f1`-`f24`, `esc`, `tab`, `capslock`, `space`, `ente
 `pagedown`/`insert`/`delete`, `printscreen`/`scrolllock`/`pause`/`numlock`/`apps`, punctuation
 (`;` `=` `,` `-` `.` `/` `[` `\` `]` `'` and the backquote key), and the media keys `volumeup`, `volumedown`, `mute`, `playpause`,
 `nexttrack`, `previoustrack`, `mediastop`, `browserback`, `browserforward`, `browserrefresh`,
-`browserhome`, `launchmail`. The GUI lists them all.
+`browserhome`, `launchmail`, and `inputsource` (macOS: selects the next input source). The GUI
+lists them all.
 
 ## Per-keyboard configs
 
