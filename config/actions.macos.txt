@@ -10,9 +10,9 @@
 # left out: new-desktop (no shortcut), clipboard-history (none before macOS 26), stop-media and
 # launch-mail (no such key).
 #
-# switch-input-source has a default shortcut, control+shift (pressed and released on their own), so
-# Mac input sources switch as on Windows. It sends inputsource, which keymapper turns into selecting
-# the next input source, as the Globe key does (macOS ignores an Fn press that a program sends).
+# switch-input-source sends inputsource, which keymapper turns into selecting the next input source,
+# as the Globe key does (macOS ignores an Fn press that a program sends). Bind it to control+shift
+# (pressed and released on their own) to switch as on Windows.
 #
 # [action name]
 # description: what it does
@@ -317,7 +317,6 @@ cmd+c, cmd+v
 [action switch-input-source]
 description: Switch to the next input source (keyboard layout or input method)
 category: Editing
-shortcut: control+shift
 inputsource
 
 # --- Tabs (browsers, editors) ---

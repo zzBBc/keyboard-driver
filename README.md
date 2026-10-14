@@ -122,10 +122,8 @@ ctrl+c, ctrl+v               # steps run in order
 - Defining an action with the same name as a built-in one in your config overrides it.
 
 **Built-in actions**: `config/actions.windows.txt` and `config/actions.macos.txt`, common shortcuts
-grouped by category, under the same names on both OSes. On macOS, `switch-input-source` defaults
-to Ctrl+Shift (see the file's header); no other action has a default shortcut. The GUI
-chooses actions from these lists and does not create new ones; to define your own, write an
-`[action ...]` block in the config file.
+grouped by category, under the same names on both OSes. The GUI chooses actions from these lists
+and does not create new ones; to define your own, write an `[action ...]` block in the config file.
 
 ### Key names
 

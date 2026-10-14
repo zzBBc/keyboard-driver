@@ -4,7 +4,6 @@
 # same name in your own config to override it. Keep the names in step with actions.macos.txt: an
 # action Windows has no shortcut for (hide-app, next-app-window, quick-note, and macOS's window
 # tiling: snap-top/-bottom, arrange-*, center-window, restore-window) is left out.
-# switch-input-source has no default shortcut here: Windows has its own (Win+Space, Ctrl+Shift, Alt+Shift).
 #
 # [action name]
 # description: what it does
@@ -95,7 +94,7 @@ ctrl+win+d
 
 # --- Media and browser keys ---
 # These send the same keys as a keyboard's media keys, so a combo of yours can stand in for a media
-# key your keyboard doesn't report to Windows. None has a default shortcut.
+# key your keyboard doesn't report to Windows.
 
 [action volume-up]
 description: Raise the volume
