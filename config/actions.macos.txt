@@ -14,6 +14,9 @@
 # as the Globe key does (macOS ignores an Fn press that a program sends). Bind it to control+shift
 # (pressed and released on their own) to switch as on Windows.
 #
+# rename-file sends Enter, which renames the selection in Finder. It is bound to F2 by default, as on
+# Windows; F2 then sends Enter in every app, so write "f2 = none" in your config to keep F2 as it is.
+#
 # [action name]
 # description: what it does
 # category: group name in the GUI (optional)
@@ -313,6 +316,12 @@ cmd+a
 description: Copy the selection and paste it right after
 category: Editing
 cmd+c, cmd+v
+
+[action rename-file]
+description: Rename the selected file or folder in Finder (as F2 does on Windows)
+category: Editing
+shortcut: f2
+enter
 
 [action switch-input-source]
 description: Switch to the next input source (keyboard layout or input method)

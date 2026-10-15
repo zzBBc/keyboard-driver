@@ -270,6 +270,11 @@ description: Copy the selection and paste it right after
 category: Editing
 ctrl+c, ctrl+v
 
+[action rename-file]
+description: Rename the selected file or folder (File Explorer, desktop)
+category: Editing
+f2
+
 [action switch-input-source]
 description: Switch to the next input language or keyboard layout (Windows' Ctrl+Shift)
 category: Editing
