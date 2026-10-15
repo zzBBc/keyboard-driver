@@ -24,7 +24,7 @@ runs:
     # tests/common/ and tests/android/
     - name: C++ tests
       shell: bash
-      run: ctest --test-dir build --output-on-failure
+      run: ctest --test-dir build --output-on-failure --verbose
 
     - name: GUI tests
       shell: bash
