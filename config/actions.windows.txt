@@ -271,9 +271,9 @@ category: Editing
 ctrl+c, ctrl+v
 
 [action switch-input-source]
-description: Switch to the next input language or keyboard layout
+description: Switch to the next input language or keyboard layout (Windows' Ctrl+Shift)
 category: Editing
-win+space
+ctrl+lshift
 
 # --- Tabs (browsers, editors) ---
 

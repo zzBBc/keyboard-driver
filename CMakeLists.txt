@@ -88,6 +88,9 @@ target_include_directories(keymapper_tests PRIVATE tests src/platform/android)
 # So tests can read the shipped config files (config/actions*.txt).
 target_compile_definitions(keymapper_tests PRIVATE KEYMAPPER_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 target_link_libraries(keymapper_tests PRIVATE keymapper_core)
+if(WIN32)
+    target_sources(keymapper_tests PRIVATE tests/windows/windows_actions_tests.cpp)
+endif()
 if(APPLE)
     target_sources(keymapper_tests PRIVATE tests/macos/mac_input_tests.cpp tests/macos/fn_tests.cpp
                                            src/platform/macos/mac_input.cpp)
