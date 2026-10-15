@@ -157,6 +157,7 @@ bool isExtendedKey(WORD vk) {
 
 void sendKey(WORD vk, bool keyUp) {
     if (vk == key::Fn) return;  // the Fn key is handled inside the keyboard; Windows has no key for it
+    if (vk == key::InputSource) return;  // macOS only; Windows switches with its own hotkeys
     INPUT in{};
     in.type = INPUT_KEYBOARD;
     in.ki.wVk = vk;

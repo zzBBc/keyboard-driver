@@ -32,6 +32,8 @@ const std::unordered_map<std::string, unsigned short>& table() {
             {"mediastop", key::MediaStop},         {"browserback", key::BrowserBack},
             {"browserforward", key::BrowserForward}, {"browserrefresh", key::BrowserRefresh},
             {"browserhome", key::BrowserHome},     {"launchmail", key::LaunchMail},
+            // Not on any keyboard: selects the next input source, as the Globe key does (macOS).
+            {"inputsource", key::InputSource},
         };
         for (char c = 'a'; c <= 'z'; ++c) m[std::string(1, c)] = static_cast<unsigned short>(c - 'a' + 'A');
         for (char c = '0'; c <= '9'; ++c) m[std::string(1, c)] = static_cast<unsigned short>(c);

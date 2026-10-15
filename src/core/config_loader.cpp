@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include "key_names.h"
+#include "keycodes.h"
 
 namespace {
 
@@ -23,7 +24,19 @@ std::string lower(std::string s) {
 // keymapper never sees the Fn key held, so a shortcut with fn could never fire.
 const char* const kFnShortcut = "fn can only be sent by an action or mapping, not be part of a shortcut";
 
-// "alt+shift+tab" -> {ModAlt|ModShift, VK_TAB}. On failure returns false and sets `err`.
+// Mod bit for a modifier name, 0 if it isn't one. Mac names work too, on every OS, so one config
+// reads naturally on both.
+unsigned modFromName(const std::string& name) {
+    const std::string m = lower(name);
+    if (m == "ctrl" || m == "control") return ModCtrl;
+    if (m == "alt" || m == "option" || m == "opt") return ModAlt;
+    if (m == "shift") return ModShift;
+    if (m == "win" || m == "cmd" || m == "command") return ModWin;
+    if (m == "fn") return ModFn;
+    return 0;
+}
+
+// "alt+shift+tab" -> {ModAlt|ModShift, VK_TAB}; "ctrl+shift" (only modifiers) -> {ModCtrl|ModShift, 0}. On failure returns false and sets `err`.
 bool parseChord(const std::string& text, KeyChord& out, std::string& err) {
     std::vector<std::string> parts;
     size_t start = 0;
@@ -36,27 +49,28 @@ bool parseChord(const std::string& text, KeyChord& out, std::string& err) {
 
     KeyChord chord;
     for (size_t i = 0; i + 1 < parts.size(); ++i) {
-        const std::string m = lower(parts[i]);
-        // Mac names work too, on every OS, so one config reads naturally on both.
-        if (m == "ctrl" || m == "control") chord.mods |= ModCtrl;
-        else if (m == "alt" || m == "option" || m == "opt") chord.mods |= ModAlt;
-        else if (m == "shift") chord.mods |= ModShift;
-        else if (m == "win" || m == "cmd" || m == "command") chord.mods |= ModWin;
-        else if (m == "fn") chord.mods |= ModFn;
-        else { err = "unknown modifier '" + parts[i] + "' (use ctrl, alt, shift, win, fn; or control, option, cmd)"; return false; }
+        const unsigned mod = modFromName(parts[i]);
+        if (!mod) { err = "unknown modifier '" + parts[i] + "' (use ctrl, alt, shift, win, fn; or control, option, cmd)"; return false; }
+        chord.mods |= mod;
     }
-    auto vk = vkFromName(parts.back());
-    if (!vk) { err = "unknown key '" + parts.back() + "'"; return false; }
-    chord.key = *vk;
+    if (auto vk = vkFromName(parts.back())) chord.key = *vk;
+    else if (const unsigned mod = modFromName(parts.back())) chord.mods |= mod;  // only modifiers: "ctrl+shift"
+    else { err = "unknown key '" + parts.back() + "'"; return false; }
     out = chord;
     return true;
+}
+
+// A step of only "fn" taps the Fn (Globe) key itself. Other steps need a key.
+bool stepKey(KeyChord& c) {
+    if (!c.key && c.mods == ModFn) c = {0, key::Fn};
+    return c.key != 0;
 }
 
 // "ctrl+c, ctrl+v" -> two steps. The whole text is tried as one chord first so "," works as a key.
 bool parseSteps(const std::string& text, Steps& out, std::string& err) {
     KeyChord single;
     std::string singleErr;
-    if (parseChord(text, single, singleErr)) { out = {single}; return true; }
+    if (parseChord(text, single, singleErr) && stepKey(single)) { out = {single}; return true; }
 
     Steps steps;
     size_t start = 0;
@@ -65,6 +79,7 @@ bool parseSteps(const std::string& text, Steps& out, std::string& err) {
         KeyChord c;
         if (!parseChord(text.substr(start, comma == std::string::npos ? std::string::npos : comma - start), c, err))
             return false;
+        if (!stepKey(c)) { err = "a step needs a key, not only modifiers"; return false; }
         steps.push_back(c);
         if (comma == std::string::npos) break;
         start = comma + 1;

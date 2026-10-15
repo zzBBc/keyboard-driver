@@ -25,3 +25,9 @@ TEST(mediaKeyNames) {
     CHECK(vkFromName("browserback").value_or(0) == key::BrowserBack);
     CHECK(nameFromVk(key::VolumeUp) == "volumeup");  // reverse lookup works for them too
 }
+
+TEST(inputSourceKeyName) {
+    // Not a key on any keyboard: sending it switches to the next input source (macOS).
+    CHECK(vkFromName("inputsource").value_or(0) == key::InputSource);
+    CHECK(nameFromVk(key::InputSource) == "inputsource");
+}

@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "config_loader.h"
+#include "input_source.h"
 
 namespace mac {
 

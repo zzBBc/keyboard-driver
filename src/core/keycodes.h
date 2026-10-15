@@ -66,6 +66,7 @@ enum : unsigned short {
     Backslash = 0xDC,
     RightBracket = 0xDD,
     Quote = 0xDE,
+    InputSource = 0xE8,  // unassigned on Windows: sending it selects the next input source (macOS only)
     Fn = 0xFF,  // not a Windows key: only sent (the fn modifier of a step), and only macOS can send it
 };
 

@@ -36,11 +36,15 @@ private:
         // physical key -> key we sent for it (0 = swallowed, e.g. it ran a chord binding)
         std::unordered_map<unsigned short, unsigned short> down;
         std::vector<unsigned short> heldMods;  // modifier keys physically down
+        // A modifier-only shortcut ("ctrl+shift") fires when one of its modifiers is released, if
+        // no other key was pressed since the first modifier went down (as Windows' Ctrl+Shift).
+        unsigned tapMods = 0;     // every modifier pressed since none were held
+        bool tapSpoiled = false;  // another key was pressed meanwhile, or the shortcut already fired
     };
 
     static bool isTrigger(const Config& cfg, unsigned short key);
     static const unsigned short* resolve(const Config& cfg, const DeviceState& st, unsigned short key);
-    static const Binding* resolveChord(const Config& cfg, const DeviceState& st, unsigned short key);
+    static const Binding* resolveChord(const Config& cfg, const DeviceState& st, unsigned mods, unsigned short key);
 
     std::shared_ptr<const Profiles> profiles_ = std::make_shared<const Profiles>();
     std::mutex profilesMutex_;  // serialises setConfig; handle() just reads a snapshot

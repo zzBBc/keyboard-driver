@@ -6,8 +6,13 @@
 # Same names as the Windows actions, so a config binding @close-window works on both. Modifiers use
 # the Mac names: cmd, option, control, shift (win, alt and ctrl mean the same and work too). Key
 # names keep their Windows names (lwin is the left Command key); fn is the Fn/Globe key, which a step
-# can send but a shortcut can't use. An action keymapper can't do on macOS is left out: new-desktop
-# (no shortcut), clipboard-history (none before macOS 26), stop-media and launch-mail (no such key).
+# can send (alone, "fn" taps it) but a shortcut can't use. An action keymapper can't do on macOS is
+# left out: new-desktop (no shortcut), clipboard-history (none before macOS 26), stop-media and
+# launch-mail (no such key).
+#
+# switch-input-source sends inputsource, which keymapper turns into selecting the next input source,
+# as the Globe key does (macOS ignores an Fn press that a program sends). Bind it to control+shift
+# (pressed and released on their own) to switch as on Windows.
 #
 # [action name]
 # description: what it does
@@ -308,6 +313,11 @@ cmd+a
 description: Copy the selection and paste it right after
 category: Editing
 cmd+c, cmd+v
+
+[action switch-input-source]
+description: Switch to the next input source (keyboard layout or input method)
+category: Editing
+inputsource
 
 # --- Tabs (browsers, editors) ---
 

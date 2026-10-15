@@ -44,10 +44,11 @@ if(TARGET keymapper)
         target_link_libraries(keymapper PRIVATE ws2_32 hid shell32)
     elseif(APPLE)
         enable_language(OBJCXX)  # the layer uses AppKit for media keys and opening the browser
-        target_sources(keymapper PRIVATE src/platform/macos/macos_platform.mm src/platform/macos/mac_input.cpp)
+        target_sources(keymapper PRIVATE src/platform/macos/macos_platform.mm src/platform/macos/mac_input.cpp
+                                        src/platform/macos/input_source.cpp)
         target_include_directories(keymapper PRIVATE src/platform/macos)
         target_link_libraries(keymapper PRIVATE
-            "-framework ApplicationServices" "-framework IOKit" "-framework CoreFoundation" "-framework AppKit")
+            "-framework ApplicationServices" "-framework IOKit" "-framework CoreFoundation" "-framework AppKit" "-framework Carbon")
     endif()
 endif()
 
@@ -87,6 +88,9 @@ target_include_directories(keymapper_tests PRIVATE tests src/platform/android)
 # So tests can read the shipped config files (config/actions*.txt).
 target_compile_definitions(keymapper_tests PRIVATE KEYMAPPER_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 target_link_libraries(keymapper_tests PRIVATE keymapper_core)
+if(WIN32)
+    target_sources(keymapper_tests PRIVATE tests/windows/windows_actions_tests.cpp)
+endif()
 if(APPLE)
     target_sources(keymapper_tests PRIVATE tests/macos/mac_input_tests.cpp tests/macos/fn_tests.cpp
                                            src/platform/macos/mac_input.cpp)

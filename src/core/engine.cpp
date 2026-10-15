@@ -33,8 +33,7 @@ const unsigned short* Engine::resolve(const Config& cfg, const DeviceState& st, 
 }
 
 // Binding for this chord: active layers first (in config order), then the base.
-const Binding* Engine::resolveChord(const Config& cfg, const DeviceState& st, unsigned short key) {
-    const unsigned mods = modsOf(st.heldMods);
+const Binding* Engine::resolveChord(const Config& cfg, const DeviceState& st, unsigned mods, unsigned short key) {
     for (const auto& layer : cfg.layers) {
         if (!st.heldTriggers.count(layer.trigger)) continue;
         if (const Binding* b = findBinding(layer.chords, mods, key)) return b;
@@ -46,11 +45,18 @@ bool Engine::handle(const std::string& device, unsigned short key, bool up, std:
     const auto profiles = std::atomic_load(&profiles_);
     DeviceState& st = state_[device];
 
+    const unsigned modsBefore = modsOf(st.heldMods);
     if (modBit(key)) {  // track physical modifiers for chord bindings
         auto& mods = st.heldMods;
         auto it = std::find(mods.begin(), mods.end(), key);
         if (up && it != mods.end()) mods.erase(it);
-        else if (!up && it == mods.end()) mods.push_back(key);
+        else if (!up && it == mods.end()) {
+            if (mods.empty()) { st.tapMods = 0; st.tapSpoiled = false; }
+            mods.push_back(key);
+            st.tapMods |= modBit(key);
+        }
+    } else if (!up && !st.heldMods.empty()) {
+        st.tapSpoiled = true;
     }
     const auto own = profiles->devices.find(device);
     const Config& cfg = *(own != profiles->devices.end() ? own->second : profiles->def);
@@ -68,6 +74,16 @@ bool Engine::handle(const std::string& device, unsigned short key, bool up, std:
             return false;
         };
         if (release(st)) return true;
+        if (modBit(key) && !st.tapSpoiled && modsBefore == st.tapMods) {
+            if (const Binding* b = resolveChord(cfg, st, modsBefore, 0)) {
+                // Let the released modifier go first, so the steps see only the ones still held.
+                send.push_back({key, true});
+                const auto events = expand(b->out, st.heldMods);
+                send.insert(send.end(), events.begin(), events.end());
+                st.tapSpoiled = true;
+                return true;
+            }
+        }
         for (auto& [id, other] : state_)
             if (&other != &st && release(other)) return true;
         return false;
@@ -82,7 +98,7 @@ bool Engine::handle(const std::string& device, unsigned short key, bool up, std:
         return true;
     }
     if (!modBit(key)) {
-        if (const Binding* b = resolveChord(cfg, st, key)) {
+        if (const Binding* b = resolveChord(cfg, st, modsOf(st.heldMods), key)) {
             const auto events = expand(b->out, st.heldMods);
             send.insert(send.end(), events.begin(), events.end());
             st.down[key] = 0;  // swallow the trigger key's release (and auto-repeat) too

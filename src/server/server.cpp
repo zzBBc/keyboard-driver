@@ -11,6 +11,7 @@
 #include "config_loader.h"
 #include "platform.h"
 #include "key_names.h"
+#include "keycodes.h"
 #include "static_files.h"
 
 // Sockets: Winsock on Windows, BSD sockets elsewhere. Only these few calls differ.
@@ -183,7 +184,9 @@ std::string stepsToText(const Steps& steps) {
         if (step.mods & ModAlt) out += "alt+";
         if (step.mods & ModShift) out += "shift+";
         if (step.mods & ModWin) out += "win+";
-        out += nameFromVk(step.key);
+        if (step.key == key::Fn) out += "fn";  // a tap of Fn alone
+        else if (step.key) out += nameFromVk(step.key);
+        else if (!out.empty() && out.back() == '+') out.pop_back();  // only modifiers: "ctrl+shift"
     }
     return out;
 }

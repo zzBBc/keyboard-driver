@@ -94,7 +94,7 @@ ctrl+win+d
 
 # --- Media and browser keys ---
 # These send the same keys as a keyboard's media keys, so a combo of yours can stand in for a media
-# key your keyboard doesn't report to Windows. None has a default shortcut.
+# key your keyboard doesn't report to Windows.
 
 [action volume-up]
 description: Raise the volume
@@ -269,6 +269,11 @@ ctrl+a
 description: Copy the selection and paste it right after
 category: Editing
 ctrl+c, ctrl+v
+
+[action switch-input-source]
+description: Switch to the next input language or keyboard layout (Windows' Ctrl+Shift)
+category: Editing
+ctrl+lshift
 
 # --- Tabs (browsers, editors) ---
 

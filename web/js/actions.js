@@ -14,17 +14,27 @@ function keyFromEvent(e) {
 }
 // Record the next shortcut pressed in the browser. (The OS keeps some, like Alt+Tab or Cmd+Tab, for
 // itself: use the checkboxes and key list for those.) Cmd on a Mac arrives as metaKey, like Win.
+// Modifiers released with no key pressed (Ctrl+Shift) record a modifier-only shortcut.
+let recMods = [];  // modifiers pressed so far while recording a shortcut
+const eventMods = e => MODS.filter(m => ({ ctrl: e.ctrlKey, alt: e.altKey, shift: e.shiftKey, win: e.metaKey })[m]);
+function stopRecording() { recMods = []; bind.recording = false; }
 document.addEventListener('keydown', e => {
   if (!bind || !bind.recording) return;
   e.preventDefault();
-  const stop = () => { bind.recording = false; };
   const noMods = !e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey;
-  if (e.key === 'Escape' && noMods) { stop(); return render(); }
+  if (e.key === 'Escape' && noMods) { stopRecording(); return render(); }
   const key = keyFromEvent(e);
-  if (!key) return;  // only a modifier so far: keep waiting
-  const mods = MODS.filter(m => ({ ctrl: e.ctrlKey, alt: e.altKey, shift: e.shiftKey, win: e.metaKey })[m]);
+  const mods = eventMods(e);
+  if (!key) { recMods = MODS.filter(m => recMods.includes(m) || mods.includes(m)); return; }  // only a modifier so far: keep waiting
   bind.mods = mods; bind.key = key;
-  stop();
+  stopRecording();
+  render();
+}, true);
+document.addEventListener('keyup', e => {
+  if (!bind || !bind.recording || !recMods.length || keyFromEvent(e)) return;  // a step needs a key
+  e.preventDefault();
+  bind.mods = recMods; bind.key = '';
+  stopRecording();
   render();
 }, true);
 
@@ -55,7 +65,7 @@ function bindEditor(name) {
   const ed = document.createElement('div'); ed.className = 'bedit';
   const rec = document.createElement('button'); rec.className = bind.recording ? 'on' : '';
   rec.textContent = bind.recording ? 'Press the shortcut\u2026 (Esc cancels)' : 'Record shortcut';
-  rec.onclick = () => { bind.recording = !bind.recording; render(); };
+  rec.onclick = () => { bind.recording = !bind.recording; recMods = []; render(); };
   ed.appendChild(rec);
 
   ed.append('or');
@@ -81,7 +91,7 @@ function bindEditor(name) {
     ed.appendChild(sc);
   }
 
-  const combo = bind.key ? comboText(bind.mods, bind.key) : '';
+  const combo = bind.key || bind.mods.length ? comboText(bind.mods, bind.key) : '';
   const ok = document.createElement('button'); ok.className = 'primary'; ok.disabled = !combo;
   ok.textContent = combo ? `Bind ${chordLabel(combo)}` : 'Bind';
   ok.onclick = () => { setTarget(scopeList(bind.scope), combo, '@' + name); bind = null; render(); };

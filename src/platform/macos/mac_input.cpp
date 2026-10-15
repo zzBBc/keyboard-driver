@@ -229,6 +229,16 @@ std::vector<HidMapping> takeCapsLockMappings(KeyMap& map) {
     return out;
 }
 
+std::optional<std::string> nextInputSource(const std::vector<InputSource>& enabled, const std::string& current) {
+    std::vector<std::string> ids;
+    for (const auto& s : enabled)
+        if (s.keyboard && s.selectable) ids.push_back(s.id);
+    const auto it = std::find(ids.begin(), ids.end(), current);
+    if (it == ids.end()) return ids.empty() ? std::nullopt : std::optional<std::string>(ids.front());
+    if (ids.size() < 2) return std::nullopt;
+    return std::next(it) == ids.end() ? ids.front() : *std::next(it);
+}
+
 std::string userKeyMappingJson(const std::vector<HidMapping>& mappings) {
     std::string json = "{\"UserKeyMapping\":[";
     for (size_t i = 0; i < mappings.size(); ++i) {

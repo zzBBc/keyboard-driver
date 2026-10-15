@@ -1,6 +1,7 @@
 #include "platform.h"
 
 #include "engine.h"
+#include "keycodes.h"
 #include "mac_input.h"
 #include "matcher.h"
 
@@ -164,6 +165,11 @@ void sendMediaKey(int nx, bool up) {
 }
 
 void sendKey(unsigned short k, bool up) {
+    if (k == key::InputSource) {
+        // After the tap callback returns, so the events around it are not held up.
+        if (!up) CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopCommonModes, ^{ mac::selectNextInputSource(); });
+        return;
+    }
     if (const auto nx = mac::mediaFromKey(k)) return sendMediaKey(*nx, up);
     const auto code = mac::macFromKey(k);
     if (!code) return;  // no such key on macOS

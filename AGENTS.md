@@ -8,7 +8,8 @@
 - Prefix the commit subject with `docs:` when the commit only changes documentation (e.g. `docs: add the no auto push rule to AGENTS.md`).
 - Commit messages are a single line: no body.
 - Do not add a `Co-Authored-By` trailer.
-- Never push a commit on your own: commit locally, and push only when the user asks for it in that message (an earlier push or an open PR does not cover later commits).
+- Never commit on your own: leave changes uncommitted for the user to review, and commit only when the user asks for it in that message (an earlier commit does not cover later changes).
+- Never push a commit on your own: push only when the user asks for it in that message (an earlier push or an open PR does not cover later commits).
 - Keep tests and codebase in separate commits: files under `tests/` go in their own commit, apart from the source, web, config and docs changes they cover.
 
 ## README
