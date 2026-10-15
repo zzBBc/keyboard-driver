@@ -3,6 +3,7 @@
 
 int main() {
     for (const auto& c : testing::cases()) {
+        std::cout << "[ RUN ] " << c.name << "\n";
         const int before = testing::failures();
         c.run();
         if (testing::failures() != before) std::cerr << "  ^ in test " << c.name << "\n";
