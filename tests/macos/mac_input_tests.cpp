@@ -318,6 +318,21 @@ TEST(macSwitchInputSourceSelectsTheNextSourceItself) {
                          {key::InputSource, true}, {key::LControl, false}}));
 }
 
+TEST(macRenameFileSendsEnterFromF2) {
+    // F2 renames in File Explorer; Finder renames on Enter, so F2 sends Enter by default on macOS.
+    const unsigned short f2 = key::F1 + 1;
+    auto lib = parse(sourceFile("config/actions.macos.txt"));
+    CHECK(lib.ok);
+    auto p = parseWithLibrary("", lib.cfg);
+    CHECK(p.ok);
+    Engine e;
+    e.setConfig("", std::make_shared<Config>(p.cfg));
+    auto down = press(e, "K1", f2);
+    CHECK(down.swallow);
+    CHECK(same(down.send, {{key::Enter, false}, {key::Enter, true}}));
+    CHECK(!findBinding(parseWithLibrary("f2 = none\n", lib.cfg).cfg.base.chords, 0, f2));  // can be cleared
+}
+
 TEST(macNextInputSourceCyclesTheKeyboardSources) {
     // What a Mac with U.S. and Vietnamese Telex lists: the Character Viewer is not a keyboard source,
     // and an input method with modes is chosen through its modes, so the Globe key cycles the other two.
