@@ -7,6 +7,8 @@ description: Packages the Windows app as keymapper-windows.zip and keymapper-win
 runs:
   using: composite
   steps:
+    - uses: ./.github/actions/make-icons
+
     - name: Configure
       shell: bash
       run: cmake -S . -B build

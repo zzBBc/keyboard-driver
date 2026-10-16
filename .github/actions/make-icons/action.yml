@@ -1,0 +1,20 @@
+name: Make icons
+description: Builds every platform's icon from the master image, assets/icon.png.
+
+# Composite action: the calling job has checked out the repo first. The generated icons (assets/keymapper.ico,
+# assets/keymapper.icns, the Android mipmaps and web/icon.png) are not committed, so a job that builds
+# or packages an app runs this before it does. See assets/make_icons.py.
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    - name: Install Pillow
+      shell: bash
+      run: python -m pip install pillow
+
+    - name: Generate the icons
+      shell: bash
+      run: python assets/make_icons.py

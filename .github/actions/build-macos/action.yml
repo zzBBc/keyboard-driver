@@ -7,6 +7,8 @@ description: Packages the macOS app (Keymapper.app) as keymapper-macos.zip and u
 runs:
   using: composite
   steps:
+    - uses: ./.github/actions/make-icons
+
     - name: Configure
       shell: bash
       run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release

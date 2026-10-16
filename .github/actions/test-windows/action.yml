@@ -7,6 +7,8 @@ description: Builds the app on Windows and runs both test suites, and nothing el
 runs:
   using: composite
   steps:
+    - uses: ./.github/actions/make-icons
+
     - uses: actions/setup-node@v4
       with:
         node-version: 24
