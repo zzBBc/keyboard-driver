@@ -202,6 +202,8 @@ The program is a portable core plus one small layer per operating system:
   (shared state), `config` (parsing and validation), `keyboard` (keyboard picture and target
   picker), `actions` (Actions tab), `devices` (server calls), `app` (rendering and start-up).
   `layouts/<os>.json`: what the GUI shows differently per OS (keyboard, labels).
+- `assets/`: the app icon: `icon.png` is the source, `make_icons.py` builds every platform's icon from it (CI runs it;
+  run it once yourself before a local build).
 - `tests/`: C++ tests, one file per area, on a tiny shared harness (`harness.h`: write
   `TEST(name) { CHECK(...); }` and it registers itself). `tests/common/` (`config_`, `matcher_`,
   `keys_`, `engine_`, `static_files_tests.cpp`) runs on every OS; `tests/macos/`

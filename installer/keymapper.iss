@@ -23,7 +23,7 @@ OutputBaseFilename=keymapper-windows-setup
 Compression=lzma2
 SolidCompression=yes
 UninstallDisplayIcon={app}\keymapper.exe
-SetupIconFile=..ssets\keymapper.ico
+SetupIconFile=..\assets\keymapper.ico
 
 [Tasks]
 Name: "startup"; Description: "Start Keymapper when I sign in"; Flags: unchecked
