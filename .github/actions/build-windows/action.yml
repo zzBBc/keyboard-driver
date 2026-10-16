@@ -26,15 +26,9 @@ runs:
         cp build/Release/actions.windows.txt build/Release/mappings.default.txt package/
         cp INSTALL.md package/  # how to run the zip
 
-    # python's zipfile module writes portable (forward-slash) entries.
-    - name: Zip the app
-      shell: bash
-      run: |
-        cd package
-        python -m zipfile -c ../keymapper-windows.zip *
-
     # The installer keeps mappings.txt and devices\ across updates (installer/keymapper.iss never ships or
     # removes them). Inno Setup is preinstalled on windows-latest. A tag build (v1.2.3) stamps its version.
+    # It runs before the zip so the zip can hold it.
     - name: Build the installer
       shell: bash
       run: |
@@ -42,6 +36,14 @@ runs:
         [[ "$GITHUB_REF" == refs/tags/v* ]] && version="${GITHUB_REF#refs/tags/v}"
         export MSYS2_ARG_CONV_EXCL="*"  # Git Bash must not rewrite the /D options as paths
         "/c/Program Files (x86)/Inno Setup 6/ISCC.exe" "/DSourceDir=$(pwd -W)\package" "/DAppVersion=$version" installer/keymapper.iss
+        cp keymapper-windows-setup.exe package/  # the zip carries the installer too
+
+    # python's zipfile module writes portable (forward-slash) entries.
+    - name: Zip the app
+      shell: bash
+      run: |
+        cd package
+        python -m zipfile -c ../keymapper-windows.zip *
 
     - name: Upload the zip and the installer
       uses: actions/upload-artifact@v4
