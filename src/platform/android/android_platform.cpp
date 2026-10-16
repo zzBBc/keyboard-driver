@@ -44,6 +44,8 @@ std::string exeDir() {
     return g_dir;
 }
 
+std::string dataDir() { return exeDir(); }
+
 std::vector<KeyboardInfo> listKeyboards() {
     std::lock_guard<std::mutex> lock(g_mutex);
     return g_keyboards;

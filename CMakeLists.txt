@@ -39,9 +39,13 @@ if(TARGET keymapper)
         target_sources(keymapper PRIVATE src/platform/android/android_platform.cpp src/platform/android/android_input.cpp)
         target_include_directories(keymapper PRIVATE src/platform/android)
     elseif(WIN32)
-        target_sources(keymapper PRIVATE src/platform/windows/windows_platform.cpp)
+        target_sources(keymapper PRIVATE src/platform/windows/windows_platform.cpp src/platform/windows/keymapper.rc)
         target_compile_definitions(keymapper PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
         target_link_libraries(keymapper PRIVATE ws2_32 hid shell32)
+        # A windowed program, not a console one: no terminal window to mix up with the user's own terminals.
+        # Keep main() as the entry point instead of WinMain.
+        set_target_properties(keymapper PROPERTIES WIN32_EXECUTABLE ON)
+        target_link_options(keymapper PRIVATE /ENTRY:mainCRTStartup)
     elseif(APPLE)
         enable_language(OBJCXX)  # the layer uses AppKit for media keys and opening the browser
         target_sources(keymapper PRIVATE src/platform/macos/macos_platform.mm src/platform/macos/mac_input.cpp

@@ -27,8 +27,8 @@ build/keymapper [config-path] [port]                  # macOS
 It opens http://127.0.0.1:8765 (the default port) in your default browser. A global keyboard hook is active while it runs,
 so remaps apply to every program.
 
-To stop it, click **Stop app** in the GUI's bottom bar (or press Ctrl+C in its console window, or
-`taskkill /IM keymapper.exe`). Only one copy runs at a time: starting `keymapper.exe` again stops the
+To stop it, click **Stop app** in the GUI's bottom bar (or `taskkill /IM keymapper.exe`; it has no
+console window on Windows). Only one copy runs at a time: starting `keymapper.exe` again stops the
 running copy and takes over its port and hook.
 
 The GUI server only listens on localhost and rejects requests from other sites.
@@ -39,6 +39,8 @@ The GUI server only listens on localhost and rejects requests from other sites.
   as on Windows.
 - Combos can use the Mac modifier names and `fn` (see [Combos and actions](#combos-and-actions)).
   Key names stay the Windows ones: `lwin` is Command, `lalt` is Option.
+- The release is `Keymapper.app` (see [INSTALL.md](INSTALL.md)); it keeps the config in
+  `~/Library/Application Support/keymapper`. A build from source keeps it next to the program.
 - Built-in actions: `config/actions.macos.txt`. The GUI's Mac labels and layout:
   `web/layouts/macos.json`.
 
@@ -200,6 +202,8 @@ The program is a portable core plus one small layer per operating system:
   (shared state), `config` (parsing and validation), `keyboard` (keyboard picture and target
   picker), `actions` (Actions tab), `devices` (server calls), `app` (rendering and start-up).
   `layouts/<os>.json`: what the GUI shows differently per OS (keyboard, labels).
+- `assets/`: the app icon: `icon.png` is the source, `make_icons.py` builds every platform's icon from it (CI runs it;
+  run it once yourself before a local build).
 - `tests/`: C++ tests, one file per area, on a tiny shared harness (`harness.h`: write
   `TEST(name) { CHECK(...); }` and it registers itself). `tests/common/` (`config_`, `matcher_`,
   `keys_`, `engine_`, `static_files_tests.cpp`) runs on every OS; `tests/macos/`

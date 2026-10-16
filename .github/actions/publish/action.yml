@@ -65,6 +65,7 @@ runs:
       run: |
         for osdir in staging/*/; do
           os="$(basename "$osdir")"
+          [[ "$os" == icons ]] && continue  # release.yml shares its icons as an artifact: not a build
           dest="release/$os"
           [[ -n "$VERSION" ]] && dest="$dest/$VERSION"
           mkdir -p "$dest"
@@ -73,6 +74,10 @@ runs:
           ext=zip; [[ "$os" == android ]] && ext=apk  # Android ships an APK, the others a zip
           cp "${osdir}keymapper-$os.$ext" "$dest/keymapper-$os${VERSION:+-$VERSION}.$ext"
           echo "published $os to $dest/keymapper-$os${VERSION:+-$VERSION}.$ext"
+          if [[ -f "${osdir}keymapper-$os-setup.exe" ]]; then  # Windows also ships an installer
+            cp "${osdir}keymapper-$os-setup.exe" "$dest/keymapper-$os-setup${VERSION:+-$VERSION}.exe"
+            echo "published the $os installer to $dest/keymapper-$os-setup${VERSION:+-$VERSION}.exe"
+          fi
         done
 
     - name: Commit and push

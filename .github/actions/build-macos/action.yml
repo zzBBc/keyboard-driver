@@ -1,5 +1,5 @@
 name: Build (macOS)
-description: Packages the macOS app as keymapper-macos.zip and uploads it as the "macos" artifact.
+description: Packages the macOS app (Keymapper.app) as keymapper-macos.zip and uploads it as the "macos" artifact.
 
 # Composite action: the calling job runs on macos-latest and checks out the repo first. It builds the
 # Release app and packages it, without running tests: release.yml runs them first in test_macos and
@@ -15,15 +15,21 @@ runs:
       shell: bash
       run: cmake --build build
 
-    # The build leaves everything the app needs next to the program (web/, actions.macos.txt,
-    # mappings.default.txt); pick just those, not the test binary or the static library.
+    # Keymapper.app: the program in Contents/MacOS, everything it reads (web/, actions.macos.txt,
+    # mappings.default.txt) in Contents/Resources, plus the icon and Info.plist. The user's config is not in
+    # the bundle: the app keeps it in ~/Library/Application Support/keymapper, so a new app keeps it. The
+    # ad-hoc signature (no certificate) gives the app a stable identity for the Accessibility and
+    # Input Monitoring permissions.
     - name: Collect the app
       shell: bash
       run: |
-        mkdir -p package
-        cp build/keymapper package/
-        cp -r build/web package/web
-        cp build/actions.macos.txt build/mappings.default.txt package/
+        app=package/Keymapper.app
+        mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
+        cp build/keymapper "$app/Contents/MacOS/"
+        cp -r build/web "$app/Contents/Resources/web"
+        cp build/actions.macos.txt build/mappings.default.txt assets/keymapper.icns "$app/Contents/Resources/"
+        cp assets/macos/Info.plist "$app/Contents/"
+        codesign --force --sign - "$app"
         cp INSTALL.md package/  # how to run the zip
 
     # python's zipfile module keeps the program's executable bit.

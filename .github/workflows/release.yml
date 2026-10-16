@@ -16,10 +16,31 @@ on:
         default: ''
 
 jobs:
+  # Every OS's icons from the master image, once. The jobs that build an app download them.
+  icons:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/make-icons
+      - uses: actions/upload-artifact@v4
+        with:
+          name: icons
+          path: |
+            assets/keymapper.ico
+            assets/keymapper.icns
+            android/app/src/main/res/mipmap-*/ic_launcher.png
+            web/icon.png
+          retention-days: 1
+          if-no-files-found: error
+
   test_windows:
+    needs: icons
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: icons
       - uses: ./.github/actions/test-windows
 
   test_macos:
@@ -39,20 +60,29 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: icons
       - uses: ./.github/actions/build-windows
 
   build_macos:
-    needs: test_macos
+    needs: [test_macos, icons]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: icons
       - uses: ./.github/actions/build-macos
 
   build_android:
-    needs: test_android
+    needs: [test_android, icons]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: icons
       - uses: ./.github/actions/build-android
 
   # Commit the built zips and the APK into the repo with one push.

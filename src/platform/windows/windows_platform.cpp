@@ -266,6 +266,8 @@ std::string exeDir() {
     return path.substr(0, path.find_last_of("\\/"));
 }
 
+std::string dataDir() { return exeDir(); }
+
 std::vector<KeyboardInfo> listKeyboards() {
     std::vector<KeyboardInfo> out;
     UINT n = 0;
