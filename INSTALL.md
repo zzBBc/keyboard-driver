@@ -6,7 +6,7 @@ this file.
 
 ## Windows
 
-**Installer (recommended)**: run `keymapper-windows-setup.exe`. It installs to `%LOCALAPPDATA%\keymapper` (no admin
+**Installer (recommended)**: run `keymapper-windows-setup.exe` (also inside the Windows zip). It installs to `%LOCALAPPDATA%\keymapper` (no admin
 needed) and adds a Start menu entry. Run a newer installer to update: your config (`mappings.txt`, `devices\`) is
 kept, and uninstalling leaves it too. Unsigned, so see the "Windows protected your PC" note below.
 
