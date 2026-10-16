@@ -6,6 +6,7 @@
 - Prefix the commit subject with `ci:` when the commit changes files under `.github/` (e.g. `ci: add release workflow`).
 - Prefix the commit subject with `test:` when the commit changes files under `tests/` (e.g. `test: cover the Android layer`).
 - Prefix the commit subject with `docs:` when the commit only changes documentation (e.g. `docs: add the no auto push rule to AGENTS.md`).
+- Prefix the commit subject with `chore:` for housekeeping such as `.gitignore`, in its own commit (e.g. `chore: ignore local installer build files`).
 - Commit messages are a single line: no body.
 - Do not add a `Co-Authored-By` trailer.
 - Never commit on your own: leave changes uncommitted for the user to review, and commit only when the user asks for it in that message (an earlier commit does not cover later changes).
