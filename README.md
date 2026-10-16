@@ -27,8 +27,8 @@ build/keymapper [config-path] [port]                  # macOS
 It opens http://127.0.0.1:8765 (the default port) in your default browser. A global keyboard hook is active while it runs,
 so remaps apply to every program.
 
-To stop it, click **Stop app** in the GUI's bottom bar (or press Ctrl+C in its console window, or
-`taskkill /IM keymapper.exe`). Only one copy runs at a time: starting `keymapper.exe` again stops the
+To stop it, click **Stop app** in the GUI's bottom bar (or `taskkill /IM keymapper.exe`; it has no
+console window on Windows). Only one copy runs at a time: starting `keymapper.exe` again stops the
 running copy and takes over its port and hook.
 
 The GUI server only listens on localhost and rejects requests from other sites.

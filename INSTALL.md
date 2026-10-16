@@ -16,8 +16,8 @@ kept, and uninstalling leaves it too. Unsigned, so see the "Windows protected yo
 2. Start `keymapper.exe`. The program is not signed, so Windows may show "Windows protected your PC":
    click **More info**, then **Run anyway**.
 3. It opens http://127.0.0.1:8765 in your browser.
-4. Stop it with **Stop app** in the GUI's bottom bar, Ctrl+C in its console window, or
-   `taskkill /IM keymapper.exe`. Starting it again stops the running copy.
+4. Stop it with **Stop app** in the GUI's bottom bar, or `taskkill /IM keymapper.exe`
+   (it has no console window). Starting it again stops the running copy.
 
 ## macOS
 
