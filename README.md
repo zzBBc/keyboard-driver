@@ -33,17 +33,6 @@ running copy and takes over its port and hook.
 
 The GUI server only listens on localhost and rejects requests from other sites.
 
-### macOS
-
-- Stop it with **Stop app**, Ctrl+C, or `pkill keymapper`. Starting it again stops the running copy,
-  as on Windows.
-- Combos can use the Mac modifier names and `fn` (see [Combos and actions](#combos-and-actions)).
-  Key names stay the Windows ones: `lwin` is Command, `lalt` is Option.
-- The release is `Keymapper.app` (see [INSTALL.md](INSTALL.md)); it keeps the config in
-  `~/Library/Application Support/keymapper`. A build from source keeps it next to the program.
-- Built-in actions: `config/actions.macos.txt`. The GUI's Mac labels and layout:
-  `web/layouts/macos.json`.
-
 ## Using the GUI
 
 - **Keyboard** dropdown: choose which keyboard you are editing, or the default config.
