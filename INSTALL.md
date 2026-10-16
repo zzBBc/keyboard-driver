@@ -1,10 +1,16 @@
 # Run the release zip
 
-The release builds are in the repository's `release/<os>/`: `keymapper-windows.zip` and
-`keymapper-macos.zip`, and `keymapper-android.apk` for Android tablets (see [Android](#android)). Each zip holds the program, `web/`, the built-in actions, the default config and
+The release builds are in the repository's `release/<os>/`: `keymapper-windows-setup.exe`,
+`keymapper-windows.zip` and `keymapper-macos.zip`, and `keymapper-android.apk` for Android tablets (see [Android](#android)). Each zip holds the program, `web/`, the built-in actions, the default config and
 this file.
 
 ## Windows
+
+**Installer (recommended)**: run `keymapper-windows-setup.exe`. It installs to `%LOCALAPPDATA%\keymapper` (no admin
+needed) and adds a Start menu entry. Run a newer installer to update: your config (`mappings.txt`, `devices\`) is
+kept, and uninstalling leaves it too. Unsigned, so see the "Windows protected your PC" note below.
+
+**Zip**: to update, unzip the new release over the old folder (do not delete the folder first). The zip has no `mappings.txt` or `devices\`, so your config is kept.
 
 1. Unzip it to a folder of your own, for example `%LOCALAPPDATA%\keymapper`.
 2. Start `keymapper.exe`. The program is not signed, so Windows may show "Windows protected your PC":
