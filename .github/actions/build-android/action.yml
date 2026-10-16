@@ -9,8 +9,6 @@ description: Builds the debug-signed Android APK as keymapper-android.apk and up
 runs:
   using: composite
   steps:
-    - uses: ./.github/actions/make-icons
-
     - uses: actions/setup-java@v4
       with:
         distribution: temurin

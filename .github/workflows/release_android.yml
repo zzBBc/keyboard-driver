@@ -23,6 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/make-icons
+        with:
+          os: android
       - uses: ./.github/actions/build-android
 
   # Commit the built APK into the repo (this workflow only runs by hand).

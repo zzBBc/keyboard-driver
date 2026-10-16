@@ -17,6 +17,9 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/make-icons
+        with:
+          os: windows
       - uses: ./.github/actions/test-windows
 
   build:
@@ -24,6 +27,9 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/make-icons
+        with:
+          os: windows
       - uses: ./.github/actions/build-windows
 
   # Commit the built zip into the repo (this workflow only runs by hand).

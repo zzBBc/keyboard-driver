@@ -65,6 +65,7 @@ runs:
       run: |
         for osdir in staging/*/; do
           os="$(basename "$osdir")"
+          [[ "$os" == icons ]] && continue  # release.yml shares its icons as an artifact: not a build
           dest="release/$os"
           [[ -n "$VERSION" ]] && dest="$dest/$VERSION"
           mkdir -p "$dest"

@@ -24,6 +24,9 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/make-icons
+        with:
+          os: macos
       - uses: ./.github/actions/build-macos
 
   # Commit the built zip into the repo (this workflow only runs by hand).
