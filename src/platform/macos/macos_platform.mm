@@ -242,15 +242,39 @@ CGEventRef tapCallback(CGEventTapProxy, CGEventType type, CGEventRef ev, void*) 
 
 namespace platform {
 
-std::string exeDir() {
+// Folder of the running executable, symlinks resolved.
+static std::string binaryDir() {
     uint32_t size = 0;
     _NSGetExecutablePath(nullptr, &size);
-    std::string path(size, '\0');
+    std::string path(size, ' ');
     if (_NSGetExecutablePath(path.data(), &size) != 0) return ".";
     path.resize(std::strlen(path.c_str()));
     std::error_code ec;
     const auto real = std::filesystem::canonical(path, ec);  // resolve symlinks and ./..
     return (ec ? std::filesystem::path(path) : real).parent_path().string();
+}
+
+static bool inAppBundle(const std::string& dir) {  // .../Keymapper.app/Contents/MacOS
+    static const std::string tail = ".app/Contents/MacOS";
+    return dir.size() >= tail.size() && dir.compare(dir.size() - tail.size(), tail.size(), tail) == 0;
+}
+
+// Inside Keymapper.app the program's files (web/, actions, default config) are in Contents/Resources.
+std::string exeDir() {
+    const std::string dir = binaryDir();
+    return inAppBundle(dir) ? (std::filesystem::path(dir).parent_path() / "Resources").string() : dir;
+}
+
+// Inside Keymapper.app the config goes to ~/Library/Application Support/keymapper, so replacing the app
+// with a newer one keeps it. A bare executable keeps its config next to it.
+std::string dataDir() {
+    if (!inAppBundle(binaryDir())) return exeDir();
+    const char* home = std::getenv("HOME");
+    if (!home || !*home) return exeDir();
+    const auto data = std::filesystem::path(home) / "Library" / "Application Support" / "keymapper";
+    std::error_code ec;
+    std::filesystem::create_directories(data, ec);
+    return ec ? exeDir() : data.string();
 }
 
 std::vector<KeyboardInfo> listKeyboards() {

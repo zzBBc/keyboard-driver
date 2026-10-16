@@ -21,6 +21,10 @@ const char* name();
 // Folder that holds the executable and its data files (web/, actions.<os>.txt, mappings.default.txt).
 std::string exeDir();
 
+// Folder for the user's config (mappings.txt, devices/). It is exeDir() unless the program runs from an app
+// bundle (macOS Keymapper.app), where it is a folder outside the bundle, so replacing the app keeps the config.
+std::string dataDir();
+
 // Keyboards currently attached (one entry per hardware id).
 std::vector<KeyboardInfo> listKeyboards();
 

@@ -14,7 +14,8 @@ int main(int argc, char** argv) {
     // A second launch replaces the running copy (stops it, then takes over its port and hook).
     if (!platform::takeOverFromRunningInstance()) return 1;
 
-    const std::string dir = platform::exeDir();
+    const std::string dir = platform::exeDir();        // the program's files: web/, built-in actions, default config
+    const std::string dataDir = platform::dataDir();  // the user's config: mappings.txt, devices/
     Engine engine;
 
     // Built-in actions shipped next to the exe; configs may use them without defining them. Each OS
@@ -38,8 +39,8 @@ int main(int argc, char** argv) {
     };
     opts.library = library;
     opts.webDir = (std::filesystem::path(dir) / "web").string();
-    opts.devicesDir = (std::filesystem::path(dir) / "devices").string();
-    opts.configPath = argc > 1 ? argv[1] : (std::filesystem::path(dir) / "mappings.txt").string();
+    opts.devicesDir = (std::filesystem::path(dataDir) / "devices").string();
+    opts.configPath = argc > 1 ? argv[1] : (std::filesystem::path(dataDir) / "mappings.txt").string();
     if (argc > 2) opts.port = std::atoi(argv[2]);
 
     // First run: seed the config from the bundled default.

@@ -21,31 +21,32 @@ kept, and uninstalling leaves it too. Unsigned, so see the "Windows protected yo
 
 ## macOS
 
-1. Unzip it and move the folder out of Downloads, for example to `~/Applications/keymapper`. macOS
+1. Unzip it and move `Keymapper.app` out of Downloads, for example to `~/Applications`. macOS
    ties the permissions below to the program's path, so keep it in one place.
 2. The zip is not signed, so macOS says it "could not verify keymapper is free of malware". Clear the
-   download quarantine from the whole folder:
+   download quarantine from the app:
 
    ```
-   xattr -dr com.apple.quarantine ~/Applications/keymapper
+   xattr -dr com.apple.quarantine ~/Applications/Keymapper.app
    ```
 
    If `xattr` says "Operation not permitted", your terminal app may not have access to that folder:
    grant it under **System Settings > Privacy & Security > Files and Folders** (or **Full Disk
    Access**), or run the command from another terminal. Instead of `xattr`, you can also start
    keymapper once, then click **Open Anyway** in **System Settings > Privacy & Security**.
-3. Start it (`./keymapper` in the folder). On first start macOS asks for two permissions. Turn both on
+3. Start it by opening `Keymapper.app`: it has no Dock icon and no Terminal window, and the GUI opens in your
+   browser. On first start macOS asks for two permissions. Turn both on
    in **System Settings > Privacy & Security**:
    - **Accessibility**: to intercept and send keys. Remapping does nothing without it.
    - **Input Monitoring**: to tell keyboards apart. Without it every keyboard uses the default config.
 
-   If the app is not in a list, click **+** and add it. When you start keymapper from a terminal,
-   the permissions belong to the terminal app (Terminal, iTerm, ...), so turn them on for that app.
+   If the app is not in a list, click **+** and add it.
 4. Restart keymapper after granting the permissions.
-5. Stop it with **Stop app** in the GUI's bottom bar, Ctrl+C, or `pkill keymapper`. Starting it
+5. Stop it with **Stop app** in the GUI's bottom bar or `pkill keymapper`. Starting it
    again stops the running copy.
 
-A new release replaces the program, and macOS may ask for the permissions again. If remapping stops
+Your config is kept in `~/Library/Application Support/keymapper`, outside the app, so replace `Keymapper.app`
+with a newer one to update. macOS may ask for the permissions again. If remapping stops
 working after an update, remove the old entry with **-** in both lists and grant it again.
 
 ## Android
