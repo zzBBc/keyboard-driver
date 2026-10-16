@@ -8,3 +8,9 @@ local.properties
 package/
 keymapper-windows-setup.exe
 keymapper-windows.zip
+
+# icons generated from assets/icon.png by assets/make_icons.py
+assets/keymapper.ico
+assets/keymapper.icns
+android/app/src/main/res/mipmap-*/
+web/icon.png
