@@ -10,9 +10,6 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/make-icons
-        with:
-          os: windows
       - uses: ./.github/actions/test-windows
 
   test_macos:
