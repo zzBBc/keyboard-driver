@@ -3,3 +3,8 @@ build/
 .gradle/
 local.properties
 .cxx/
+
+# local installer build
+package/
+keymapper-windows-setup.exe
+keymapper-windows.zip
