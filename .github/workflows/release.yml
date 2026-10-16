@@ -34,13 +34,9 @@ jobs:
           if-no-files-found: error
 
   test_windows:
-    needs: icons
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: icons
       - uses: ./.github/actions/test-windows
 
   test_macos:
@@ -56,7 +52,7 @@ jobs:
       - uses: ./.github/actions/test-android
 
   build_windows:
-    needs: test_windows
+    needs: [test_windows, icons]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
