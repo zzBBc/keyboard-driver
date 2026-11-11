@@ -11,6 +11,8 @@
     <key>CFBundleShortVersionString</key><string>1.0</string>
     <key>CFBundleVersion</key><string>1</string>
     <key>NSHighResolutionCapable</key><true/>
+    <!-- Matches CMAKE_OSX_DEPLOYMENT_TARGET in CMakeLists.txt. -->
+    <key>LSMinimumSystemVersion</key><string>11.0</string>
     <!-- A background program: no Dock icon, no menu bar. Its window is the browser GUI. -->
     <key>LSUIElement</key><true/>
 </dict>
