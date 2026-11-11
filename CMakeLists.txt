@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
+# Oldest macOS the app runs on; without it the binary needs the build machine's macOS. Must precede project().
+set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version")
 project(keyboard_driver CXX)
 
 set(CMAKE_CXX_STANDARD 17)
